@@ -1,7 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 #define INIT_CAPACITY 1024
-#define PRINT_SPAN_INTERNALS false
+#define PRINT_SPAN_INTERNALS true
 #include "common.h"
 #include <stddef.h>
 #include <stdbool.h>
@@ -45,6 +45,8 @@ static const char *TOKEN_KIND_NAMES[] = {
 typedef struct {
     Token_Kind kind;
     Span span;
+    size_t x; /* column */
+    size_t y; /* line */
 } Token;
 
 void Print_Token(const char *src, Token const *self);
@@ -60,5 +62,8 @@ typedef struct {
 Lexer *Init_Lexer(const char *src);
 Token Next_Token(Lexer *self);
 void Free_Lexer(Lexer *self);
+
+/* Tests */
+void Test_Lexer();
 
 #endif // LEXER_H

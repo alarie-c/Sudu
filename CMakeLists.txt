@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 project(SUDUC C)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
-# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fsanitize=address")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic")
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic -fsanitize=address")
 
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_C_STANDARD 17)

@@ -19,7 +19,9 @@ int main() {
 
     // Test_Error_Printing();
     // Test_Error_Collection();
-    Test_Append_Data_Errors();
+    // Test_Append_Data_Errors();
+    Test_Lexer();
+
 
     return 0;
 }

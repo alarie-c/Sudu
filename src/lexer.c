@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <assert.h>
 #define IS_EOF ((self->pos) >= (self->len))
 #define SPAN(len) ((Span) {self->pos, (len)})
 
@@ -41,11 +42,11 @@ void Print_Token(const char *src, Token const *self)
 
     if (PRINT_SPAN_INTERNALS)
     {
-        printf("%zu @ %zu  %s  '%s'\n", pos, len, type, lex);
+        printf("%zu:%zu | %zu @ %zu | %s | '%s'\n", self->y, self->x, pos, len, type, lex);
     }
     else
     {
-        printf(" %s  '%s'\n", type, lex);
+        printf("%s | '%s'\n", type, lex);
     }
 }
 
@@ -114,7 +115,7 @@ Token Next_Token(Lexer *self)
 
     if (IS_EOF)
     {
-        return (Token) {TOK_EOF, SPAN(1)};
+        return (Token) {TOK_EOF, SPAN(1), self->x, self->y};
     }
     
     eat_whitespace(self);
@@ -125,45 +126,45 @@ Token Next_Token(Lexer *self)
     {
         case '\n':
         {
-            tk = (Token) {TOK_NEWLINE, SPAN(1)};
+            tk = (Token) {TOK_NEWLINE, SPAN(1), self->x, self->y};
             self->y++;
-            self->x = 0;
+            self->x = 0; /* zero here because consume() will advance it to 1 */
             break;
         }
         case '(':
         {
-            tk = (Token) {TOK_LPAREN, SPAN(1)};
+            tk = (Token) {TOK_LPAREN, SPAN(1), self->x, self->y};
             break;
         }
         case ')':
         {
-            tk = (Token) {TOK_RPAREN, SPAN(1)};
+            tk = (Token) {TOK_RPAREN, SPAN(1), self->x, self->y};
             break;
         }
 
         case '+':
         {
-            tk = (Token) {TOK_PLUS, SPAN(1)};
+            tk = (Token) {TOK_PLUS, SPAN(1), self->x, self->y};
             break;
         }
         case '-':
         {
-            tk = (Token) {TOK_MINUS, SPAN(1)};
+            tk = (Token) {TOK_MINUS, SPAN(1), self->x, self->y};
             break;
         }
         case '*':
         {
-            tk = (Token) {TOK_STAR, SPAN(1)};
+            tk = (Token) {TOK_STAR, SPAN(1), self->x, self->y};
             break;
         }
         case '/':
         {
-            tk = (Token) {TOK_SLASH, SPAN(1)};
+            tk = (Token) {TOK_SLASH, SPAN(1), self->x, self->y};
             break;
         }
         case '%':
         {
-            tk = (Token) {TOK_PERCENT, SPAN(1)};
+            tk = (Token) {TOK_PERCENT, SPAN(1), self->x, self->y};
             break;
         }
         
@@ -200,7 +201,7 @@ Token Next_Token(Lexer *self)
                 Span span = (Span) {start, end - start + 1};
                 Token_Kind kind = cmp_keywords(self->src, &span);
                 
-                tk = (Token) {kind, span};
+                tk = (Token) {kind, span, startx, self->y};
                 break; 
             }
             
@@ -233,15 +234,79 @@ Token Next_Token(Lexer *self)
 
                 size_t end = self->pos;
                 Span span = (Span) {start, end - start + 1};
-                tk = (Token) {kind, span};
+                tk = (Token) {kind, span, startx, self->y};
                 break; 
             }
             
-            tk = (Token) {TOK_ILLEGAL, SPAN(1)};
+            tk = (Token) {TOK_ILLEGAL, SPAN(1), self->x, self->y};
             break;
         }
     }
 
     consume(self);
     return tk;
+}
+
+//-------------------------------------------------------------------------------//
+// tests
+//-------------------------------------------------------------------------------//
+
+void Test_Lexer()
+{
+    printf("[test] lexer\n");
+    
+    const char *src = "function main\n    end#this is a comment\n";
+    printf("src: %s\n", src);
+    
+    Lexer *lexer = Init_Lexer(src);
+    
+    {
+        Token t = Next_Token(lexer);
+        Print_Token(src, &t);
+        assert(t.kind == TOK_FUNCTION);
+        assert(t.x == 1);
+        assert(t.y == 1);
+    }
+
+    {
+        Token t = Next_Token(lexer);
+        Print_Token(src, &t);
+        assert(t.kind == TOK_SYMBOL);
+        assert(t.x == 10);
+        assert(t.y == 1);
+    }
+
+    {
+        Token t = Next_Token(lexer);
+        Print_Token(src, &t);
+        assert(t.kind == TOK_NEWLINE);
+        assert(t.x == 14);
+        assert(t.y == 1);
+    }
+
+    {
+        Token t = Next_Token(lexer);
+        Print_Token(src, &t);
+        assert(t.kind == TOK_SYMBOL);
+        assert(t.x == 5);
+        assert(t.y == 2);
+    }
+
+    {
+        Token t = Next_Token(lexer);
+        Print_Token(src, &t);
+        assert(t.kind == TOK_NEWLINE);
+        assert(t.x == 26);
+        assert(t.y == 2);
+    }
+
+    {
+        Token t = Next_Token(lexer);
+        Print_Token(src, &t);
+        assert(t.kind == TOK_EOF);
+        assert(t.x == 1);
+        assert(t.y == 3);
+    }
+
+    printf("[test] lexer test passed\n");
 }
