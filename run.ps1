@@ -14,4 +14,5 @@ if ($c) {
     Write-Host "Compilation complete."
 }
 
-Start-Process -NoNewWindow -Wait -FilePath "./cladis.exe"
+Start-Process -NoNewWindow -Wait -FilePath "./sudu.exe"
+Set-Location ..
