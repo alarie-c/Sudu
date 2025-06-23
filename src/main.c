@@ -8,7 +8,7 @@
  * [x] create a union in the error type to hold special error data
  * [x] rework the ast structure to use node ids in a contiguous array
  * write a test framework instead of this other garbage
- * store x and y componenets in token struct
+ * [x] store x and y componenets in token struct
  * 
  * 
  * 
@@ -20,7 +20,8 @@ int main() {
     // Test_Error_Printing();
     // Test_Error_Collection();
     // Test_Append_Data_Errors();
-    Test_Lexer();
+    // Test_Lexer();
+    Test_Binary_Expression();
 
 
     return 0;

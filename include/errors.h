@@ -11,7 +11,8 @@
 #include <stddef.h>
 #include <common.h>
 
-typedef enum {
+typedef enum
+{
     ERR_SYNTAX,
     ERR_ILLEGAL_CHAR,
     ERR_UNTERMINATED_LITERAL,
@@ -29,7 +30,8 @@ static const char* error_type_names[] = {
 
 /// @brief Holds location info for the definition of a function
 /// so it can report what the type was originally defined as
-typedef struct {
+typedef struct
+{
     Span def_span;
     size_t def_x;
     size_t def_y;
@@ -38,7 +40,8 @@ typedef struct {
     const char *def_src;
 } Error_Invalid_Return;
 
-typedef struct Error {
+typedef struct Error
+{
     Error_Type type;
     size_t x;
     size_t y;
@@ -55,7 +58,8 @@ void Append_Invalid_Return(Error *self, Error_Invalid_Return data);
 void Print_Error(const char *src, const char *path, Error const *self);
 void Free_Error(Error *self);
 
-typedef struct Error_Collection {
+typedef struct Error_Collection
+{
     const char *src;
     const char *path;
     Error *errors;

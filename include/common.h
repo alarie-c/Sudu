@@ -5,7 +5,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-typedef struct {
+typedef struct
+{
     size_t pos;
     size_t len;
 } Span;

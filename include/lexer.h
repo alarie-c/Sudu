@@ -6,7 +6,9 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-typedef enum {
+#define NUM_TOKEN_KINDS 14
+typedef enum
+{
     TOK_EOF = 0,
     TOK_ILLEGAL,
     TOK_RPAREN,
@@ -42,7 +44,8 @@ static const char *TOKEN_KIND_NAMES[] = {
     "NEWLINE",
 };
 
-typedef struct {
+typedef struct
+{
     Token_Kind kind;
     Span span;
     size_t x; /* column */
@@ -51,7 +54,8 @@ typedef struct {
 
 void Print_Token(const char *src, Token const *self);
 
-typedef struct {
+typedef struct
+{
     const char *src;
     size_t len;
     size_t pos;

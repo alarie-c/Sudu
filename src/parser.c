@@ -4,10 +4,19 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#define CHECK_NONZERO(node) if ((node) == 0) return 0
 
 //-------------------------------------------------------------------------------//
 // node map methods
 //-------------------------------------------------------------------------------//
+
+Ast_Node make_node(Node_Type type, Span span)
+{
+    Ast_Node node;
+    node.type = type;
+    node.span = span;
+    return node;
+}
 
 Ast_Node init_program_node(size_t cap)
 {
@@ -55,10 +64,10 @@ size_t node_map_push(Node_Map *self, Ast_Node node)
 {
     if (!self) return 0;
 
-    if (self->size == self->capacity)
+    if (self->size >= self->capacity)
     {
         size_t new_cap = self->capacity * 2;
-        Ast_Node *new_nodes = realloc(self->nodes, new_cap * sizeof(Ast_Node));
+        Ast_Node *new_nodes = (Ast_Node *)realloc(self->nodes, new_cap * sizeof(Ast_Node));
         if (!new_nodes) return 0;
         self->capacity = new_cap;
         self->nodes = new_nodes;
@@ -70,7 +79,7 @@ size_t node_map_push(Node_Map *self, Ast_Node node)
 }
 
 Ast_Node *node_map_get(Node_Map const *self, size_t i)
-{
+{    
     if (!self) return NULL;
     if (i >= self->size) return NULL;
     return &self->nodes[i];
@@ -81,7 +90,7 @@ void Free_Node_Map(Node_Map *map)
     if (!map) return;
     
     if (map->size > 0 && map->nodes[0].type == AST_PROGRAM)
-        free_program_node(&map->nodes[0].data_program);
+        free_program_node(&map->nodes[0].v_program);
 
     free(map->nodes);
     free(map);
@@ -116,8 +125,7 @@ void push_to_program(Parser *self, Ast_Program *root, Ast_Node node)
 
 void print_indent(int i)
 {
-    for (int j = 0; j < i; j++)
-        putchar(' ');
+    for (int j = 0; j < i; j++) putchar(' ');
 }
 
 void Print_Node(Node_Map *map, size_t id, int i)
@@ -137,34 +145,34 @@ void Print_Node(Node_Map *map, size_t id, int i)
     {
         case AST_BINARY_EXPR:
         {
-            printf("BINARY EXPR:\n");
-            Print_Node(map, self->data_binary_expr.lhs, i + 2);
-            Print_Node(map, self->data_binary_expr.rhs, i + 2);
+            printf("BINARY EXPR of %s:\n", AST_OP_NAMES[self->v_binary_expr.op]);
+            Print_Node(map, self->v_binary_expr.lhs, i + 2);
+            Print_Node(map, self->v_binary_expr.rhs, i + 2);
             break;
         }
 
         case AST_FLOAT:
         {
-            printf("FLOAT: %f\n", self->data_float);
+            printf("FLOAT: %f\n", self->v_float);
             break;
         }
 
         case AST_INTEGER:
         {
-            printf("INTEGER: %ld\n", self->data_integer);
+            printf("INTEGER: %ld\n", self->v_integer);
         }
     }
 }
 
 size_t make_node_integer(Node_Map *map, Span const span, long int value)
 {
-    Ast_Node node = (Ast_Node) {AST_INTEGER, .data_integer = value, span };
+    Ast_Node node = (Ast_Node) {AST_INTEGER, .v_integer = value, span };
     return node_map_push(map, node);
 }
 
 size_t make_node_float(Node_Map *map, Span const span, float value)
 {
-    Ast_Node node = (Ast_Node) {AST_FLOAT, .data_float = value, span };
+    Ast_Node node = (Ast_Node) {AST_FLOAT, .v_float = value, span };
     return node_map_push(map, node);
 }
 
@@ -174,17 +182,28 @@ size_t make_node_float(Node_Map *map, Span const span, float value)
 
 Parser *Init_Parser(const char *src)
 {
-    Parser *parser = malloc(sizeof(Parser));
+    Parser *parser = (Parser *)malloc(sizeof(Parser));
     Lexer *lexer = Init_Lexer(src);
     if (lexer == NULL || parser == NULL) return NULL;
 
-    // create the AST program node
     Node_Map *map = node_map_init(INIT_AST_CAPACITY);
-    if (map == NULL) return NULL;
+    if (map == NULL)
+    {
+        Free_Lexer(lexer);
+        free(parser);
+        return NULL;
+    }
+    
+    Token t; parser->peeked_tk = t;
 
     parser->src = src;
     parser->lexer = lexer;
     parser->map = map;
+    
+    parser->is_peeked = false;
+    parser->is_at_end = false;
+
+    parser->current_tk = Next_Token(parser->lexer);
     return parser;
 }
 
@@ -213,6 +232,36 @@ void remove_literal_underscores(char *str)
 //-------------------------------------------------------------------------------//
 // parser helpers
 //-------------------------------------------------------------------------------//
+
+Token p_next(Parser *self)
+{
+    if (self->is_peeked)
+    {
+        Token tk = self->peeked_tk;
+        self->peeked_tk = (Token) {0};
+        self->is_peeked = false;
+        self->current_tk = tk;
+        return tk;
+    }
+    Token tk = Next_Token(self->lexer);
+    self->current_tk = tk;
+
+    if (tk.kind == TOK_EOF) self->is_at_end = true;
+    return tk;
+}
+
+Token p_peek(Parser *self)
+{
+    if (self->is_peeked)
+    {
+        return self->peeked_tk;
+    }
+
+    Token tk = Next_Token(self->lexer);
+    self->peeked_tk = tk;
+    self->is_peeked = true;
+    return tk;
+}
 
 bool parse_integer(char *lexeme, long int *value)
 {
@@ -262,10 +311,11 @@ int parse_float(char *lexeme, float *value)
 // actual parsers
 //-------------------------------------------------------------------------------//
 
-size_t parse_literal(Parser *self, Token *tk)
+size_t parse_expr(Parser *self);
+
+size_t parse_literal(Parser *self)
 {   
-    Node_Map *map = self->map;
-    
+    Token *tk = &self->current_tk;
     switch (tk->kind)
     {
         case TOK_INTEGER:
@@ -283,7 +333,7 @@ size_t parse_literal(Parser *self, Token *tk)
             size_t len = tk->span.len;
             Span node_span = (Span) {pos, len};
 
-            return make_node_integer(map, node_span, value);
+            return make_node_integer(self->map, node_span, value);
         }
 
         case TOK_FLOAT:
@@ -301,7 +351,7 @@ size_t parse_literal(Parser *self, Token *tk)
             size_t len = tk->span.len;
             Span node_span = (Span) {pos, len};
 
-            return make_node_float(map, node_span, value);
+            return make_node_float(self->map, node_span, value);
         }
         
         default:
@@ -309,4 +359,62 @@ size_t parse_literal(Parser *self, Token *tk)
             return 0;
         }
     }
+}
+
+size_t parse_binary(Parser *self)
+{
+    Token tk = self->current_tk;
+    size_t expr = parse_literal(self);
+    CHECK_NONZERO(expr);
+
+    Ast_Op op = AST_BINARY_INFIX[p_peek(self).kind];
+    if (op != OP_NONE)
+    {
+        p_next(self); /* operator */
+        p_next(self); /* beginning of RHS */
+        Print_Token(self->src, &self->current_tk);
+        Span span = (Span) {tk.span.pos, tk.span.len + self->current_tk.span.len};
+       
+        size_t rhs = parse_expr(self);
+        CHECK_NONZERO(rhs);
+
+        Ast_Binary_Expr value = (Ast_Binary_Expr) {.lhs = expr, .op = op, .rhs = rhs};
+        Ast_Node node = make_node(AST_BINARY_EXPR, span);
+        
+        node.v_binary_expr = value;
+        expr = node_map_push(self->map, node);
+    }
+
+    return expr;
+}
+
+size_t parse_expr(Parser *self)
+{
+    return parse_binary(self);
+}
+
+//-------------------------------------------------------------------------------//
+// parser tests
+//-------------------------------------------------------------------------------//
+
+void Test_Binary_Expression()
+{
+    printf("[test] binary expr\n");
+
+    const char *src = "5 + 10 * 15 / 800";
+    
+    Parser *parser = Init_Parser(src);
+    if (!parser) return;
+
+    bool eof = false;
+    do {
+        size_t id = parse_expr(parser);
+        Print_Node(parser->map, id, 0);
+        p_next(parser);
+        if (parser->is_at_end) eof = true;
+    } while (!eof);
+
+    Free_Parser(parser);
+
+    printf("[text] binary expr test complete\n");
 }
