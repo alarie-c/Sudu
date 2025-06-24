@@ -257,7 +257,7 @@ void Append_Invalid_Return(Error *self, Error_Invalid_Return data)
     self->data_invalid_return = data;
 }
 
-static inline Error Make_Error(Error_Type type, size_t x, size_t y, Span span, const char *msg)
+Error Make_Error(Error_Type type, size_t x, size_t y, Span span, const char *msg)
 {
     return (Error) {type, x, y, span, {}, msg, strlen(msg)};
 }

@@ -5,6 +5,7 @@
 #include "common.h"
 #include "lexer.h"
 #include "tests.h"
+#include "errors.h"
 #include <stdbool.h>
 
 /// @brief Enum constants for the different types of nodes in the AST,
@@ -15,6 +16,7 @@ typedef enum
     AST_BINARY_EXPR,
     AST_FLOAT,
     AST_INTEGER,
+    AST_GROUPING,
 } Node_Type;
 
 /// @brief Top-level program node that holds every declaration in the file.
@@ -72,6 +74,7 @@ typedef struct
         Ast_Binary_Expr v_binary_expr;
         float v_float;
         long int v_integer;
+        size_t v_inner;
     };
     Span span;
 } Ast_Node;
@@ -95,6 +98,7 @@ typedef struct
 
     Lexer *lexer;
     Node_Map *map;
+    Error_Collection *errors;
 
     /* token caches */
 
@@ -112,6 +116,7 @@ void Free_Parser(Parser *self);
 void Parse(Parser *self);
 
 void Test_Binary_Expression(Test_Info *info);
+void Test_Grouping_Expression(Test_Info *info);
 
 #endif // PARSER_H
 

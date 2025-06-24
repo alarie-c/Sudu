@@ -53,7 +53,7 @@ typedef struct Error
     size_t msg_len;
 } Error;
 
-static inline Error Make_Error(Error_Type type, size_t x, size_t y, Span const span, const char *msg);
+Error Make_Error(Error_Type type, size_t x, size_t y, Span const span, const char *msg);
 void Append_Invalid_Return(Error *self, Error_Invalid_Return data);
 void Print_Error(const char *src, const char *path, Error const *self);
 void Free_Error(Error *self);

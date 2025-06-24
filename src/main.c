@@ -28,13 +28,13 @@ void tests()
         )
     );
 
-    /* single test example */
-    Test binary_expression_parser = Create_Test(
-        Test_Binary_Expression,
-        "Binary Expression Parser",
-        TEST_TYPE_MANUAL
+    Load_Test(env,
+        Create_Test(
+            Test_Grouping_Expression,
+            "Grouping Expression Parser",
+            TEST_TYPE_MANUAL
+        )
     );
-    Run_Test(&binary_expression_parser);
 
     Run_Battery(env);
     Free_Test_Environment(env);

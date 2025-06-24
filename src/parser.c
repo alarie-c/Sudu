@@ -1,11 +1,20 @@
 #include "parser.h"
 #include "tests.h"
 #include "common.h"
+#include "errors.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include <stdbool.h>
 #define CHECK_NONZERO(node) if ((node) == 0) return 0
+#define PRINT_NODE(id) Print_Node(self->map, id, 2)
+
+void throw_tokens(Parser *self, Token tk, const char *msg)
+{
+    if (!self) return;
+    Ec_Push(self->errors, Make_Error(ERR_SYNTAX, tk.x, tk.y, tk.span, msg));
+}
 
 //-------------------------------------------------------------------------------//
 // node map methods
@@ -161,6 +170,20 @@ void Print_Node(Node_Map *map, size_t id, int i)
         case AST_INTEGER:
         {
             printf("INTEGER: %ld\n", self->v_integer);
+            break;
+        }
+
+        case AST_GROUPING:
+        {
+            printf("GROUPING:\n");
+            Print_Node(map, self->v_inner, i + 2);
+            break;
+        }
+
+        default:
+        {
+            printf("<Unknown Type>\n");
+            break;
         }
     }
 }
@@ -185,12 +208,21 @@ Parser *Init_Parser(const char *src)
 {
     Parser *parser = (Parser *)malloc(sizeof(Parser));
     Lexer *lexer = Init_Lexer(src);
-    if (lexer == NULL || parser == NULL) return NULL;
+    if (!lexer || !parser) return NULL;
 
     Node_Map *map = node_map_init(INIT_AST_CAPACITY);
-    if (map == NULL)
+    if (!map)
     {
         Free_Lexer(lexer);
+        free(parser);
+        return NULL;
+    }
+
+    Error_Collection *ec = Init_Error_Collection(parser->src, "<NoPath>");
+    if (!ec)
+    {
+        Free_Lexer(lexer);
+        Free_Node_Map(map);
         free(parser);
         return NULL;
     }
@@ -199,6 +231,7 @@ Parser *Init_Parser(const char *src)
 
     parser->src = src;
     parser->lexer = lexer;
+    parser->errors = ec;
     parser->map = map;
     
     parser->is_peeked = false;
@@ -354,6 +387,29 @@ size_t parse_literal(Parser *self)
 
             return make_node_float(self->map, node_span, value);
         }
+
+        case TOK_LPAREN:
+        {
+            p_next(self); /* consume LPAREN */
+            
+            size_t inner = parse_expr(self);
+            CHECK_NONZERO(inner);
+
+            if (p_peek(self).kind != TOK_RPAREN)
+            {
+                throw_tokens(self, self->peeked_tk, "expected ')'");
+                return 0;
+            }
+            p_next(self); /* consume RPAREN */
+
+            size_t len = self->current_tk.span.len;
+            Span span = (Span) {tk->span.pos, 1 + len};
+
+            Ast_Node node = make_node(AST_GROUPING, span);
+            node.v_inner = inner;
+
+            return node_map_push(self->map, node);
+        }
         
         default:
         {
@@ -373,7 +429,6 @@ size_t parse_binary(Parser *self)
     {
         p_next(self); /* operator */
         p_next(self); /* beginning of RHS */
-        Print_Token(self->src, &self->current_tk);
         Span span = (Span) {tk.span.pos, tk.span.len + self->current_tk.span.len};
        
         size_t rhs = parse_expr(self);
@@ -398,9 +453,8 @@ size_t parse_expr(Parser *self)
 // parser tests
 //-------------------------------------------------------------------------------//
 
-void Test_Binary_Expression(Test_Info *info)
+bool test_parser(Test_Info *info, const char *src)
 {
-    const char *src = "5 + 10 * 15 / 800";
     printf("> Source: '%s'\n", src);
     
     Parser *parser = Init_Parser(src);
@@ -414,13 +468,39 @@ void Test_Binary_Expression(Test_Info *info)
     bool eof = false;
     do {
         size_t id = parse_expr(parser);
-        printf("> Printing Node:\n");
-        Print_Node(parser->map, id, 2);
+        
+        if (id == 0)
+        {
+            printf("<NULL NODE>\n");
+        }
+        else
+        {
+            printf("> Printing Node:\n");
+            Print_Node(parser->map, id, 4);
+        }
+        
         p_next(parser);
         if (parser->is_at_end) eof = true;
     } while (!eof);
 
+    Ec_Report_All(parser->errors);
+    Ec_Free(parser->errors);
     Free_Parser(parser);
+}
+
+void Test_Grouping_Expression(Test_Info *info)
+{
+    const char *src = "(5 + 10) + (50 + 100)";
+    if (!test_parser(info, src)) return;
+
+    info->success = true;
+    info->status = true;
+}
+
+void Test_Binary_Expression(Test_Info *info)
+{
+    const char *src = "5 + 10 * 15 / 800";
+    if (!test_parser(info, src)) return;
 
     info->success = true;
     info->status = true;
