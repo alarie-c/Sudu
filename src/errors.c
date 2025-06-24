@@ -38,7 +38,7 @@ void Ec_Push(Error_Collection *self, Error err)
     if (self->size == self->capacity)
     {
         size_t new_cap = self->capacity * 2;
-        Error *new_errors = (Error *)realloc(self->errors, new_cap);
+        Error *new_errors = (Error *)realloc(self->errors, new_cap * sizeof(Error));
         if (!new_errors)
         {
             printf("<Error Collection Reallocation Failed>\n");

@@ -4,6 +4,7 @@
 #define INIT_PROGRAM_CAPACITY 64
 #include "common.h"
 #include "lexer.h"
+#include "tests.h"
 #include <stdbool.h>
 
 /// @brief Enum constants for the different types of nodes in the AST,
@@ -110,7 +111,7 @@ Parser *Init_Parser(const char *src);
 void Free_Parser(Parser *self);
 void Parse(Parser *self);
 
-void Test_Binary_Expression();
+void Test_Binary_Expression(Test_Info *info);
 
 #endif // PARSER_H
 

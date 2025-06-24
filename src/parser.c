@@ -1,5 +1,6 @@
-#include "common.h"
 #include "parser.h"
+#include "tests.h"
+#include "common.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -397,24 +398,30 @@ size_t parse_expr(Parser *self)
 // parser tests
 //-------------------------------------------------------------------------------//
 
-void Test_Binary_Expression()
+void Test_Binary_Expression(Test_Info *info)
 {
-    printf("[test] binary expr\n");
-
     const char *src = "5 + 10 * 15 / 800";
+    printf("> Source: '%s'\n", src);
     
     Parser *parser = Init_Parser(src);
-    if (!parser) return;
+    if (!parser)
+    {
+        info->success = false;
+        info->status = false;
+        info->message = "parser failed to allocate";
+    }
 
     bool eof = false;
     do {
         size_t id = parse_expr(parser);
-        Print_Node(parser->map, id, 0);
+        printf("> Printing Node:\n");
+        Print_Node(parser->map, id, 2);
         p_next(parser);
         if (parser->is_at_end) eof = true;
     } while (!eof);
 
     Free_Parser(parser);
 
-    printf("[text] binary expr test complete\n");
+    info->success = true;
+    info->status = true;
 }
