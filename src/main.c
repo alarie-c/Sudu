@@ -4,17 +4,6 @@
 #include "tests.h"
 #include <stdio.h>
 
-/* TODO & CONSIDERATIONS
- * 
- * [x] create a union in the error type to hold special error data
- * [x] rework the ast structure to use node ids in a contiguous array
- * [x] write a test framework instead of this other garbage
- * [x] store x and y componenets in token struct
- * 
- * 
- * 
- */
-
 void tests()
 {
     Test_Environment *env = Init_Test_Environment();

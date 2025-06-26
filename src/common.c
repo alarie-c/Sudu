@@ -43,3 +43,18 @@ bool Cmp_Lexeme(const char *src, const Span *span, const char *lit)
     return strncmp(src + span->pos, lit, span->len) == 0
            && lit[span->len] == '\0';
 }
+
+void Remove_Underbars(char *str)
+{
+    char *src = str;
+    char *dst = str;
+    while (*src)
+    {
+        if (*src != '_')
+        {
+            *dst++ = *src;
+        }
+        src++;
+    }
+    *dst = '\0';
+}

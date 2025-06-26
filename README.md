@@ -5,13 +5,33 @@ To be implemented as a bytecode interpreter on a virtual machine...
 Statically and explicitly typed, with some flexibility.
 
 ```
-global NAME: str = "World"
-
-function greeting(name: str) -> str
-    return "Hello, ${name}"
+greeting = func(name: str)
+    print("Hello, ${name}")
 end
 
-function main()
-    print(greeting(NAME))
+main = func()
+    greeting("World")
 end
 ```
+
+## Progress Tracker
+
+### General
+- [ ] Update the build script to allow for tests/compilation and for aborting on compilation errors
+- [ ] Implement binary postfixup algorithm for the binary expression parser
+
+### Systems
+- [ ] Parser
+    - [x] Binary Infix Expressions
+    - [ ] Unary Prefix Expressions
+    - [ ] Function Declarations
+    - [ ] Function Calls
+    - [ ] Variable Declaratiosn
+    - [ ] Variable Assignment
+- [ ] Sematic Analyzer
+    - [ ] Type Checker
+    - [ ] Name Resolution
+    - [ ] Scope/Context Tracking
+- [ ] Bytecode Compiler
+    - [ ] Register Allocator
+    - [ ] Basic Expressions like '5 + 10 + 30'

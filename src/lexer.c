@@ -54,10 +54,10 @@ void Print_Token(const char *src, Token const *self)
 // lexer methods
 //-------------------------------------------------------------------------------//
 
-Lexer *Init_Lexer(const char const *src)
+Lexer *Init_Lexer(const char *src)
 {
     size_t len = strlen(src);
-    Lexer *self = (Lexer*)malloc(sizeof(Lexer));
+    Lexer *self = malloc(sizeof(Lexer));
     if (self == NULL) return NULL;
 
     self->len = len;

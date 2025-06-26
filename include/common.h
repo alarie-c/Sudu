@@ -14,5 +14,6 @@ typedef struct
 size_t Lexeme_Buffer_Len(Span const *span);
 void Get_Lexeme(char *buf, size_t buf_size, const char *src, Span const *span, bool escapes);
 bool Cmp_Lexeme(const char *src, const Span *span, const char *lit);
+void Remove_Underbars(char *str);
 
 #endif // COMMON_H

@@ -20,7 +20,7 @@ typedef enum
     ERR_INVALID_RETURN,
 } Error_Type;
 
-static const char* error_type_names[] = {
+static const char* ERROR_TYPE_NAMES[] = {
     "syntax error",
     "illegal character",
     "unterminated literal",
@@ -40,7 +40,7 @@ typedef struct
     const char *def_src;
 } Error_Invalid_Return;
 
-typedef struct Error
+typedef struct
 {
     Error_Type type;
     size_t x;
@@ -58,10 +58,10 @@ void Append_Invalid_Return(Error *self, Error_Invalid_Return data);
 void Print_Error(const char *src, const char *path, Error const *self);
 void Free_Error(Error *self);
 
-typedef struct Error_Collection
+typedef struct
 {
     const char *src;
-    const char *path;
+    char *path; /* this is strdup'd and freed later */
     Error *errors;
     size_t size;
     size_t capacity;

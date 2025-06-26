@@ -38,7 +38,7 @@ void Ec_Push(Error_Collection *self, Error err)
     if (self->size == self->capacity)
     {
         size_t new_cap = self->capacity * 2;
-        Error *new_errors = (Error *)realloc(self->errors, new_cap * sizeof(Error));
+        Error *new_errors = realloc(self->errors, new_cap * sizeof(Error));
         if (!new_errors)
         {
             printf("<Error Collection Reallocation Failed>\n");
@@ -112,7 +112,7 @@ struct line_fetch_result fetch_line(const char *src, size_t i)
         return (struct line_fetch_result) {(Span) {0}, false};
 
     // find the beginning of the line
-    for (size_t j = i - 1; j >= 0; j--)
+    for (size_t j = i - 1; /*N/A*/; j--)
     {
         if (j == 0)
         {
@@ -204,7 +204,7 @@ void Print_Error(const char *src, const char *path, Error const *self)
     printf("%s%serror:%s %s:%zu:%zu",
         TERM_ESC, TERM_REDB, TERM_RESET, path, self->y, self->x);
 
-    const char *type = error_type_names[self->type];
+    const char *type = ERROR_TYPE_NAMES[self->type];
     printf("%s%s %s %s\n", TERM_ESC, TERM_YELLOWB, type, TERM_RESET);
 
     struct line_fetch_result line = fetch_line(src, self->span.pos);
@@ -242,6 +242,8 @@ void Print_Error(const char *src, const char *path, Error const *self)
             print_invalid_return(self);
             break;
         }
+
+        default: break;
     }
     printf("\n");
 }
@@ -259,7 +261,13 @@ void Append_Invalid_Return(Error *self, Error_Invalid_Return data)
 
 Error Make_Error(Error_Type type, size_t x, size_t y, Span span, const char *msg)
 {
-    return (Error) {type, x, y, span, {}, msg, strlen(msg)};
+    return (Error) {
+        .type = type,
+        .x = x, .y = y,
+        .span = span,
+        .message = msg,
+        .msg_len = strlen(msg)
+    };
 }
 
 void Free_Error(Error *self)
