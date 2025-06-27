@@ -16,7 +16,7 @@ typedef struct
 
     Lexer *lexer;
     Node_Map *map;
-    Error_Collection *errors;
+    List errors;
 
     /* token caches */
 

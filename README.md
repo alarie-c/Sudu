@@ -19,6 +19,10 @@ end
 ### General
 - [ ] Update the build script to allow for tests/compilation and for aborting on compilation errors
 - [ ] Implement binary postfixup algorithm for the binary expression parser
+- [x] Create a generalized List structure for dynamic arrays
+- [x] Implement `List<Error>` for error collection
+- [ ] Implement `List<Ast_Node>` for the parser
+- [~] Implement `List<Test>` for the testing framework? It should probably be program-agnostic though 
 
 ### Systems
 - [ ] Parser

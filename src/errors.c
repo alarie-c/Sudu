@@ -1,5 +1,6 @@
 #include "errors.h"
 #include "common.h"
+#include "tests.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -8,85 +9,20 @@
 #include <stdbool.h>
 
 //-------------------------------------------------------------------------------//
-// collection methods
-//-------------------------------------------------------------------------------//
-
-Error_Collection *Init_Error_Collection(const char *src, const char *path)
-{
-    Error *errors = malloc(INIT_ERROR_CAPACITY * sizeof(Error));
-    if (!errors) return NULL;
-
-    Error_Collection *self = malloc(sizeof(Error_Collection));
-    if (!self)
-    {
-        free(errors);
-        return NULL;
-    }
-
-    self->capacity = INIT_ERROR_CAPACITY;
-    self->size = 0;
-    self->src = src;
-    self->path = strdup(path);
-    self->errors = errors;
-    return self;
-}
-
-void Ec_Push(Error_Collection *self, Error err)
-{
-    if (!self) return;
-    
-    if (self->size == self->capacity)
-    {
-        size_t new_cap = self->capacity * 2;
-        Error *new_errors = realloc(self->errors, new_cap * sizeof(Error));
-        if (!new_errors)
-        {
-            printf("<Error Collection Reallocation Failed>\n");
-            return;
-        }
-
-        self->errors = new_errors;
-        self->capacity = new_cap;
-    }
-
-    self->errors[self->size] = err;
-    self->size++;
-}
-
-void Ec_Report_All(Error_Collection const *self)
-{
-    if (!self) return;
-    
-    for (size_t i = 0; i < self->size; i++)
-    {
-        Error *err = &self->errors[i];
-        if (err) Print_Error(self->src, self->path, err);
-    }
-}
-
-void Ec_Free(Error_Collection *self)
-{
-    if (!self) return;
-    
-    for (size_t i = 0; i < self->size; i++)
-    {
-        Error *err = &self->errors[i];
-        if (err) Free_Error(err);
-    }
-    free(self->path); /* this was duplicated */
-    free(self->errors);
-    free(self);
-}
-
-//-------------------------------------------------------------------------------//
 // reporting methods
 //-------------------------------------------------------------------------------//
 
-struct line_fetch_result
+void Report_Errors(List *errrors, const char *src, const char *path)
 {
-    Span span;
-    bool valid;
-};
+    if (!errrors || errrors->count == 0) return;
+    
+    for (size_t i = errrors->count - 1 ;; i--)
+    {
+        Error *error = (Error *)List_Get(errrors, i);
+        if (error) Print_Error(src, path, error);
+        if (i == 0) break;
+    }
+}
 
 void hide_newlines(char *str)
 {
@@ -103,6 +39,7 @@ void hide_newlines(char *str)
     }
 }
 
+struct line_fetch_result { Span span; bool valid; };
 struct line_fetch_result fetch_line(const char *src, size_t i)
 {
     size_t src_len = strlen(src);
@@ -142,8 +79,8 @@ struct line_fetch_result fetch_line(const char *src, size_t i)
     }
 
     assert(end <= src_len); /* returning the \0 of the source is irrelevant */
-                        /* because that position will just be overwritte with */
-                        /* a \0 when we get the lexeme. */
+                            /* because that position will just be overwritte with */
+                            /* a \0 when we get the lexeme. */
     assert(start < src_len);
     assert(end >= i);
     assert(start <= i);
@@ -252,7 +189,6 @@ void Print_Error(const char *src, const char *path, Error const *self)
 // error methods
 //-------------------------------------------------------------------------------//
 
-
 void Append_Invalid_Return(Error *self, Error_Invalid_Return data)
 {
     if (self->type != ERR_INVALID_RETURN) return;
@@ -278,43 +214,8 @@ void Free_Error(Error *self)
 // tests
 //-------------------------------------------------------------------------------//
 
-void Test_Error_Printing()
+void Test_Error_Collection(Test_Info *info)
 {
-    printf("[test] error printing\n");
-
-    {
-        printf("[test] begin case 1\n\n");
-        const char *src = "let x = 'hello' + 5";
-        printf("case 1 source code:\n%s\n\n", src);
-
-        size_t y = 3;
-        size_t x = 9;
-        size_t pos = 8;
-        size_t len = 7;
-
-        Span span = (Span) {pos, len};
-        Error err = Make_Error(ERR_SYNTAX, x, y, span, "invalid character literal, use \" for strings");
-        printf("case 1 error out:\n\n");
-        Print_Error(src, "test.sudu", &err);
-        printf("\nend case 1\n");
-    }
-
-    printf("[test] error printing tests complete\n");
-}
-
-void Test_Terminal_Color_Codes()
-{
-    printf("[test] terminal color codes\n");
-    printf("red bold: %s%sTEST%s test\n", TERM_ESC, TERM_REDB, TERM_RESET);
-    printf("yellow bold: %s%sTEST%s test\n", TERM_ESC, TERM_YELLOWB, TERM_RESET);
-    printf("green normal: %s%sTEST%s test\n", TERM_ESC, TERM_GREEN, TERM_RESET);
-    printf("[test] terminal color codes tests complete\n");
-}
-
-void Test_Error_Collection()
-{
-    printf("[test] error collection\n");
-    
     const char *path = "test.sudu";
     const char *src = "function main()\n"
                       "    let 2 = 20\n"
@@ -326,29 +227,28 @@ void Test_Error_Collection()
     assert(src[24] == '2');
     assert(src[35] == 'r');
 
-    Error_Collection *ec = Init_Error_Collection(src, path);
-
+    List ec = List_New(sizeof(Error), INIT_ERROR_CAPACITY);
+    
     {
         Span span = (Span) {24, 1};
         Error err = Make_Error(ERR_SYNTAX, 33, 2, span, "expected identifier, got '2'");
-        Ec_Push(ec, err);
+        List_Add(&ec, &err);
     }
     {
         Span span = (Span) {35, 9};
         Error err = Make_Error(ERR_SYNTAX, 5, 3, span, "function 'main' is annoted to return nothing, but returns 'int' here");
-        Ec_Push(ec, err);
+        List_Add(&ec, &err);
     }
 
-    Ec_Report_All(ec);
-    Ec_Free(ec);
-
-    printf("[test] error collection test complete\n");
+    Report_Errors(&ec, src, path);
+    List_Free(&ec);
+    
+    info->status = true;
+    info->success = true;
 }
 
-void Test_Append_Data_Errors()
+void Test_Append_Data_Errors(Test_Info *info)
 {
-    printf("[test] append data errors\n");
-
     const char *path = "test.sudu";
     const char *src = "function main() -> integer\n"
                       "    return 0.5\n"
@@ -356,7 +256,7 @@ void Test_Append_Data_Errors()
     assert(src[31] == 'r');
     assert(src[19] == 'i');
 
-    Error_Collection *ec = Init_Error_Collection(src, path);
+    List ec = List_New(sizeof(Error), INIT_ERROR_CAPACITY);
 
     {
         Span span = (Span) {31, 10};
@@ -370,11 +270,12 @@ void Test_Append_Data_Errors()
             .def_src = src
         };
         Append_Invalid_Return(&err, data);
-        Ec_Push(ec, err);
+        List_Add(&ec, &err);
     }
 
-    Ec_Report_All(ec);
-    Ec_Free(ec);
+    Report_Errors(&ec, src, path);
+    List_Free(&ec);
 
-    printf("[test] append data errors test complete\n");
+    info->status = true;
+    info->success = true;
 }

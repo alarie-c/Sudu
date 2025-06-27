@@ -18,7 +18,8 @@
 void throw_tokens(Parser *self, Token tk, const char *msg)
 {
     if (!self) return;
-    Ec_Push(self->errors, Make_Error(ERR_SYNTAX, tk.x, tk.y, tk.span, msg));
+    Error err = Make_Error(ERR_SYNTAX, tk.x, tk.y, tk.span, msg);
+    List_Add(&self->errors, &err);
 }
 
 //-------------------------------------------------------------------------------//
@@ -39,8 +40,8 @@ Parser *Init_Parser(const char *src)
         return NULL;
     }
 
-    Error_Collection *ec = Init_Error_Collection(parser->src, "<NoPath>");
-    if (!ec)
+    List errors = List_New(sizeof(Error), INIT_ERROR_CAPACITY);
+    if (errors.capacity == 0)
     {
         Free_Lexer(lexer);
         Free_Node_Map(map);
@@ -53,7 +54,7 @@ Parser *Init_Parser(const char *src)
 
     parser->src = src;
     parser->lexer = lexer;
-    parser->errors = ec;
+    parser->errors = errors;
     parser->map = map;
     
     parser->is_peeked = false;
@@ -310,8 +311,8 @@ bool test_parser(Test_Info *info, const char *src)
         if (parser->is_at_end) eof = true;
     } while (!eof);
 
-    Ec_Report_All(parser->errors);
-    Ec_Free(parser->errors);
+    Report_Errors(&parser->errors, parser->src, "<No Path>");
+    List_Free(&parser->errors);
     Free_Parser(parser);
 
     return true;

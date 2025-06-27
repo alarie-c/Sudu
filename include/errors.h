@@ -57,20 +57,7 @@ Error Make_Error(Error_Type type, size_t x, size_t y, Span const span, const cha
 void Append_Invalid_Return(Error *self, Error_Invalid_Return data);
 void Print_Error(const char *src, const char *path, Error const *self);
 void Free_Error(Error *self);
-
-typedef struct
-{
-    const char *src;
-    char *path; /* this is strdup'd and freed later */
-    Error *errors;
-    size_t size;
-    size_t capacity;
-} Error_Collection;
-
-Error_Collection *Init_Error_Collection(const char *src, const char *path);
-void Ec_Push(Error_Collection *self, Error err);
-void Ec_Report_All(Error_Collection const *self);
-void Ec_Free(Error_Collection *self);
+void Report_Errors(List *errors, const char *src, const char *path);
 
 /* Tests */
 void Test_Error_Printing();
