@@ -8,8 +8,13 @@
 #define TERM_RED "[31m"
 #define TERM_MAGENTAB "[35;1m"
 #define INIT_ERROR_CAPACITY 64
+#include "tests.h"
 #include <stddef.h>
 #include <common.h>
+
+//-------------------------------------------------------------------------------//
+// error implementation
+//-------------------------------------------------------------------------------//
 
 typedef enum
 {
@@ -60,9 +65,7 @@ void Free_Error(Error *self);
 void Report_Errors(List *errors, const char *src, const char *path);
 
 /* Tests */
-void Test_Error_Printing();
-void Test_Terminal_Color_Codes();
-void Test_Error_Collection();
-void Test_Append_Data_Errors();
+void Test_Error_Collection(Test_Info *info);
+void Test_Append_Data_Errors(Test_Info *info);
 
 #endif // ERRORS_H

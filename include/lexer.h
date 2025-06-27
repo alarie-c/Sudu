@@ -9,8 +9,7 @@
 #define NUM_TOKEN_KINDS 14
 typedef enum
 {
-    TOK_EOF = 0,
-    TOK_ILLEGAL,
+    TOK_ILLEGAL = 0,
     TOK_RPAREN,
     TOK_LPAREN,
     TOK_PLUS,
@@ -24,10 +23,10 @@ typedef enum
     TOK_FUNCTION,
     TOK_LET,
     TOK_NEWLINE,
+    TOK_EOF,
 } Token_Kind;
 
 static const char *TOKEN_KIND_NAMES[] = {
-    "EOF",
     "ILLEGAL",
     "RPAREN",
     "LPAREN",
@@ -42,6 +41,7 @@ static const char *TOKEN_KIND_NAMES[] = {
     "FUNCTION",
     "LET",
     "NEWLINE",
+    "EOF",
 };
 
 typedef struct

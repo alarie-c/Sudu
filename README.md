@@ -21,8 +21,7 @@ end
 - [ ] Implement binary postfixup algorithm for the binary expression parser
 - [x] Create a generalized List structure for dynamic arrays
 - [x] Implement `List<Error>` for error collection
-- [ ] Implement `List<Ast_Node>` for the parser
-- [~] Implement `List<Test>` for the testing framework? It should probably be program-agnostic though 
+- [x] Implement `List<Ast_Node>` for the parser
 
 ### Systems
 - [ ] Parser

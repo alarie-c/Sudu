@@ -1,116 +1,125 @@
 #include "parser.h"
 #include "ast.h"
-#include "tests.h"
 #include "common.h"
+#include "tests.h"
+#include "lexer.h"
 #include "errors.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
 #include <stdbool.h>
-#define CHECK_NONZERO(node) if ((node) == 0) return 0
-#define PRINT_NODE(id) Print_Node(self->map, id, 2)
 
-//-------------------------------------------------------------------------------//
-// error methods
-//-------------------------------------------------------------------------------//
-
-void throw_tokens(Parser *self, Token tk, const char *msg)
+void error_on_token(List *errors, Token tk, const char *msg)
 {
-    if (!self) return;
+    if (!errors) return;
     Error err = Make_Error(ERR_SYNTAX, tk.x, tk.y, tk.span, msg);
-    List_Add(&self->errors, &err);
+    List_Add(errors, &err);
 }
 
 //-------------------------------------------------------------------------------//
 // parser methods
 //-------------------------------------------------------------------------------//
 
-Parser *Init_Parser(const char *src)
+Token parser_next(Parser *self)
 {
-    Parser *parser = malloc(sizeof(Parser));
-    Lexer *lexer = Init_Lexer(src);
-    if (!lexer || !parser) return NULL;
-
-    Node_Map *map = Node_Map_Init(INIT_AST_CAPACITY);
-    if (!map)
-    {
-        Free_Lexer(lexer);
-        free(parser);
-        return NULL;
-    }
-
-    List errors = List_New(sizeof(Error), INIT_ERROR_CAPACITY);
-    if (errors.capacity == 0)
-    {
-        Free_Lexer(lexer);
-        Free_Node_Map(map);
-        free(parser);
-        return NULL;
-    }
+    if (!self) return (Token) {0};
     
-    Token t = (Token) {0};
-    parser->peeked_tk = t;
-
-    parser->src = src;
-    parser->lexer = lexer;
-    parser->errors = errors;
-    parser->map = map;
-    
-    parser->is_peeked = false;
-    parser->is_at_end = false;
-
-    parser->current_tk = Next_Token(parser->lexer);
-    return parser;
-}
-
-void Free_Parser(Parser *self)
-{
-    Free_Lexer(self->lexer);
-    Free_Node_Map(self->map);
-    free(self);
-}
-
-//-------------------------------------------------------------------------------//
-// parser helpers
-//-------------------------------------------------------------------------------//
-
-Token p_next(Parser *self)
-{
     if (self->is_peeked)
     {
+        
+        /* get the peeked token and reset */
         Token tk = self->peeked_tk;
         self->peeked_tk = (Token) {0};
         self->is_peeked = false;
-        self->current_tk = tk;
+        
+        /* update EOF condition */
+        if (tk.kind == TOK_EOF) self->is_at_end = true;
         return tk;
     }
+
     Token tk = Next_Token(self->lexer);
     self->current_tk = tk;
-
     if (tk.kind == TOK_EOF) self->is_at_end = true;
     return tk;
 }
 
-Token p_peek(Parser *self)
+Token parser_peek(Parser *self)
 {
-    if (self->is_peeked)
-    {
-        return self->peeked_tk;
-    }
-
+    if (!self) return (Token) {0};
+    if (self->is_peeked) return self->peeked_tk;
+    
     Token tk = Next_Token(self->lexer);
-    self->peeked_tk = tk;
     self->is_peeked = true;
+    self->peeked_tk = tk;
     return tk;
 }
 
-bool parse_integer(char *lexeme, long int *value)
+Parser *Parser_Init(const char *src, const char *path)
+{
+    Parser *self = malloc(sizeof(Parser));
+    if (!self) return NULL;
+
+    Lexer *lexer = Init_Lexer(src);
+    if (!lexer)
+    {
+        free(self);
+        return NULL;
+    }
+
+    self->lexer = lexer;
+    self->src = src;
+    self->path = strdup(path);
+    self->is_at_end = false;
+    self->is_peeked = false;
+    
+    self->current_tk = Next_Token(lexer);
+    self->peeked_tk = (Token) {0};
+
+    List syntax_tree = List_New(sizeof(size_t), INIT_PROGRAM_CAPACITY);
+    List nodes = List_New(sizeof(Ast_Node), INIT_PROGRAM_CAPACITY);
+    List errors = List_New(sizeof(Error), INIT_ERROR_CAPACITY);
+    if (nodes.capacity == 0
+        || errors.capacity == 0
+        || syntax_tree.capacity == 0)
+    {
+        Free_Lexer(self->lexer);
+        free(self);
+        return NULL;
+    }  
+
+    Ast_Node base = Node_Build(AST_PROGRAM, (Span) {0});
+    base.v_program = syntax_tree;
+    List_Add(&nodes, &base);
+
+    self->nodes = nodes;
+    self->errors = errors;
+    return self;
+}
+
+void Parser_Free(Parser *self)
+{
+    if (!self) return;
+    Free_Lexer(self->lexer);
+    List_Free(&self->nodes);
+    List_Free(&self->errors);
+    free(self->path);
+    free(self);
+}
+
+void Parse(Parser *self)
+{}
+
+//-------------------------------------------------------------------------------//
+// helper parsers
+//-------------------------------------------------------------------------------//
+
+bool parse_integer(char *lexeme, int32_t *value)
 {
     Remove_Underbars(lexeme);
 
     char *endptr;
-    long int num;
+    int32_t num;
     num = strtol(lexeme, &endptr, 10);
     if (endptr == lexeme)
     {
@@ -149,27 +158,8 @@ int parse_float(char *lexeme, float *value)
     return true;
 }
 
-void push_to_program(Parser *self, Ast_Program *root, Ast_Node node)
-{
-    if (!root || !self) return;
-
-    size_t id = Node_Map_Push(self->map, node);
-    if (id == 0) return;
-
-    if (root->size == root->capacity)
-    {
-        size_t new_cap = root->capacity * 2;
-        size_t *new_ids = realloc(root->ids, new_cap * sizeof(size_t));
-        if (!new_ids) return;
-        root->ids = new_ids;
-        root->capacity = new_cap;
-    }
-
-    root->ids[root->size] = id;
-}
-
 //-------------------------------------------------------------------------------//
-// actual parsers
+// parser implementation
 //-------------------------------------------------------------------------------//
 
 size_t parse_expr(Parser *self);
@@ -184,7 +174,7 @@ size_t parse_literal(Parser *self)
             size_t size = tk->span.len + 1;
             size_t buffer_size = size >= 3 ? size : 3;
             char lex[buffer_size];
-            long int value;
+            int32_t value;
             
             Get_Lexeme(lex, buffer_size, self->src, &tk->span, NO_ESCAPES);
             int result = parse_integer(lex, &value);
@@ -194,9 +184,8 @@ size_t parse_literal(Parser *self)
             size_t len = tk->span.len;
             Span node_span = (Span) {pos, len};
 
-            return Node_Build_Integer(self->map, node_span, value);
+            return Node_Build_Integer(&self->nodes, node_span, value);
         }
-
         case TOK_FLOAT:
         {
             size_t size = tk->span.len + 1;
@@ -212,32 +201,27 @@ size_t parse_literal(Parser *self)
             size_t len = tk->span.len;
             Span node_span = (Span) {pos, len};
 
-            return Node_Build_Float(self->map, node_span, value);
+            return Node_Build_Float(&self->nodes, node_span, value);
         }
-
         case TOK_LPAREN:
         {
-            p_next(self); /* consume LPAREN */
+            parser_next(self); /* consume LPAREN */
             
             size_t inner = parse_expr(self);
             CHECK_NONZERO(inner);
 
-            if (p_peek(self).kind != TOK_RPAREN)
+            if (parser_peek(self).kind != TOK_RPAREN)
             {
-                throw_tokens(self, self->peeked_tk, "expected ')'");
+                error_on_token(&self->errors, self->peeked_tk, "expected ')'");
                 return 0;
             }
-            p_next(self); /* consume RPAREN */
+            parser_next(self); /* consume RPAREN */
 
             size_t len = self->current_tk.span.len;
-            Span span = (Span) {tk->span.pos, 1 + len};
+            Span node_span = (Span) {tk->span.pos, 1 + len};
 
-            Ast_Node node = Node_Build(AST_GROUPING, span);
-            node.v_inner = inner;
-
-            return Node_Map_Push(self->map, node);
+            return Node_Build_Grouping(&self->nodes, node_span, inner);
         }
-        
         default:
         {
             return 0;
@@ -251,11 +235,11 @@ size_t parse_binary(Parser *self)
     size_t expr = parse_literal(self);
     CHECK_NONZERO(expr);
 
-    Ast_Op op = AST_BINARY_INFIX[p_peek(self).kind];
+    Ast_Op op = AST_BINARY_INFIX[parser_peek(self).kind];
     if (op != OP_NONE)
     {
-        p_next(self); /* operator */
-        p_next(self); /* beginning of RHS */
+        parser_next(self); /* operator */
+        parser_next(self); /* beginning of RHS */
         Span span = (Span) {tk.span.pos, tk.span.len + self->current_tk.span.len};
        
         size_t rhs = parse_expr(self);
@@ -263,9 +247,9 @@ size_t parse_binary(Parser *self)
 
         Ast_Binary_Expr value = (Ast_Binary_Expr) {.lhs = expr, .op = op, .rhs = rhs};
         Ast_Node node = Node_Build(AST_BINARY_EXPR, span);
-        
         node.v_binary_expr = value;
-        expr = Node_Map_Push(self->map, node);
+
+        expr = Push_And_Get_Id(&self->nodes, node);
     }
 
     return expr;
@@ -273,6 +257,7 @@ size_t parse_binary(Parser *self)
 
 size_t parse_expr(Parser *self)
 {
+    PRINT_TOKEN(self->current_tk);
     return parse_binary(self);
 }
 
@@ -284,7 +269,7 @@ bool test_parser(Test_Info *info, const char *src)
 {
     printf("> Source: '%s'\n", src);
     
-    Parser *parser = Init_Parser(src);
+    Parser *parser = Parser_Init(src, "<No Path>");
     if (!parser)
     {
         info->success = false;
@@ -304,16 +289,15 @@ bool test_parser(Test_Info *info, const char *src)
         else
         {
             printf("> Printing Node:\n");
-            Print_Node(parser->map, id, 4);
+            Print_Node(&parser->nodes, id, 4);
         }
         
-        p_next(parser);
+        parser_next(parser);
         if (parser->is_at_end) eof = true;
     } while (!eof);
 
-    Report_Errors(&parser->errors, parser->src, "<No Path>");
-    List_Free(&parser->errors);
-    Free_Parser(parser);
+    Report_Errors(&parser->errors, parser->src, parser->path);
+    Parser_Free(parser);
 
     return true;
 }
