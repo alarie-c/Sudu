@@ -10,6 +10,15 @@ Test Create_Test(Test_Procedure proc, const char *name, int type)
     return (Test) {.info = info, .name = name, .proc = proc, .type = type};
 }   
 
+bool Assert(bool cond, Test_Info *info, const char *msg)
+{
+    if (cond) return true;
+    info->status = true;
+    info->success = false;
+    info->message = msg;
+    return false;
+}
+
 //-------------------------------------------------------------------------------//
 // test environment
 //-------------------------------------------------------------------------------//

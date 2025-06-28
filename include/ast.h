@@ -13,6 +13,7 @@ typedef enum
 {
     AST_PROGRAM = 0,
     AST_BINARY_EXPR,
+    AST_ASSIGNMENT,
     AST_GROUPING,
     AST_INTEGER,
     AST_FLOAT,
@@ -27,6 +28,11 @@ typedef enum
     OP_MUL,
     OP_DIV,
     OP_MOD,
+
+    /* assignment */
+
+    OP_EQ,
+    OP_PLUS_EQ,
 } Ast_Op;
 
 //-------------------------------------------------------------------------------//
@@ -81,15 +87,20 @@ static int AST_BINARY_INFIX[NUM_TOKEN_KINDS] = {
     [TOK_STAR] = OP_MUL,
     [TOK_SLASH] = OP_DIV,
     [TOK_PERCENT] = OP_MOD,
+
+    [TOK_EQ]      = OP_EQ,
+    [TOK_PLUS_EQ] = OP_PLUS_EQ,
 };
 
 static const char *AST_OP_NAMES[] = {
-    [OP_NONE] = "None",
-    [OP_ADD] = "+",
-    [OP_SUB] = "-",
-    [OP_MUL] = "*",
-    [OP_DIV] = "/",
-    [OP_MOD] = "%",
+    [OP_NONE]    = "None",
+    [OP_ADD]     = "+",
+    [OP_SUB]     = "-",
+    [OP_MUL]     = "*",
+    [OP_DIV]     = "/",
+    [OP_MOD]     = "%",
+    [OP_EQ]      = "=",
+    [OP_PLUS_EQ] = "+=",
 };
 
 #endif // AST_H

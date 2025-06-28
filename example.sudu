@@ -1,0 +1,32 @@
+# PART 1: parsing variable declaration, assignment, and binary arithmetic
+    
+    let x = 0
+    let _ = x + 10      # should put '10' into one of the registers
+
+    var y = 100
+    let _ = y + 1       # should put '101' into one of the registers
+    y = 50              # should update the 'y' register
+    let _ = y + 1       # should put '51' into one of the registers
+
+# PART 2: basic procedure declaration and calling
+
+    proc main()
+        let a = 100
+        print(a)
+
+        mut b = a + 100
+        print(b)
+
+        b = 500
+        print(b)
+    end
+
+    # 'main' is called at the beginning of the bytecode, i.e.
+
+    main:
+        loadi %0 100
+        ...
+
+    go main         ; call to the 'main' label
+    mov %exc 0      ; mov '0' to the exit code reg
+    exit            ; exit the program

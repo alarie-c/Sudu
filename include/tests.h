@@ -38,6 +38,8 @@ struct Test_Info
     const char *message;
 };
 
+bool Assert(bool cond, Test_Info *info, const char *msg);
+
 /// DEFINITION
 /// @brief The container for a test itself, this is used only by the test
 /// environment to keep track of it.
@@ -79,14 +81,6 @@ void Free_Test_Environment(Test_Environment *env);
 //-------------------------------------------------------------------------------//
 // test runners
 //-------------------------------------------------------------------------------//
-
-/// @brief Custom assert macro that early returns of the condition evaluates
-/// to false.
-#define ASSERT(cond, msg)                                                      \
-    if (!(cond))                                                               \
-        return (Test_Result) {                                                 \
-            .status = true, .success = false, .message = (msg)                 \
-        }
 
 void Run_Test(Test *test);
 

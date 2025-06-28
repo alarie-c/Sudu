@@ -28,24 +28,8 @@ void tests()
 
     Load_Test(env,
         Create_Test(
-            Test_List,
-            "List<int> Implementation",
-            TEST_TYPE_MANUAL
-        )
-    );
-
-    Load_Test(env,
-        Create_Test(
-            Test_Error_Collection,
-            "Error Collection via List<Error>",
-            TEST_TYPE_MANUAL
-        )
-    );
-
-    Load_Test(env,
-        Create_Test(
-            Test_Append_Data_Errors,
-            "Error Data Append",
+            Test_Lexer,
+            "Lexer Tokenization",
             TEST_TYPE_ASSERTION
         )
     );

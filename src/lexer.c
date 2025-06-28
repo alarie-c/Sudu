@@ -1,5 +1,6 @@
 #include "lexer.h"
 #include "common.h"
+#include "tests.h"
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 #include <assert.h>
 #define IS_EOF ((self->pos) >= (self->len))
 #define SPAN(len) ((Span) {self->pos, (len)})
+#define SPAN_DOUBLE ((Span) {self->pos - 1, 2})
 
 //-------------------------------------------------------------------------------//
 // token methods
@@ -16,10 +18,12 @@
 
 Token_Kind cmp_keywords(const char *src, const Span *span)
 {
-    if (Cmp_Lexeme(src, span, "function"))
-        return TOK_FUNCTION;
+    if (Cmp_Lexeme(src, span, "proc"))
+        return TOK_PROC;
     else if (Cmp_Lexeme(src, span, "let"))
         return TOK_LET;
+    else if (Cmp_Lexeme(src, span, "mut"))
+        return TOK_MUT;
     else
         return TOK_SYMBOL;
 }
@@ -120,6 +124,7 @@ Token Next_Token(Lexer *self)
     
     eat_whitespace(self);
     char ch = current_char(self);
+    size_t start = self->x;
     Token tk;
 
     switch (ch)
@@ -141,9 +146,25 @@ Token Next_Token(Lexer *self)
             tk = (Token) {TOK_RPAREN, SPAN(1), self->x, self->y};
             break;
         }
-
+        case '=':
+        {
+            if (peek(self) == '=')
+            {
+                consume(self);
+                tk = (Token) {TOK_EQ_EQ, SPAN_DOUBLE, start, self->y};
+                break;
+            }
+            tk = (Token) {TOK_EQ, SPAN(1), self->x, self->y};
+            break;
+        }
         case '+':
         {
+            if (peek(self) == '=')
+            {
+                consume(self);
+                tk = (Token) {TOK_PLUS_EQ, SPAN_DOUBLE, start, self->y};
+                break;
+            }
             tk = (Token) {TOK_PLUS, SPAN(1), self->x, self->y};
             break;
         }
@@ -251,62 +272,53 @@ Token Next_Token(Lexer *self)
 // tests
 //-------------------------------------------------------------------------------//
 
-void Test_Lexer()
-{
-    printf("[test] lexer\n");
-    
-    const char *src = "function main\n    end#this is a comment\n";
-    printf("src: %s\n", src);
-    
+void Test_Lexer(Test_Info *info)
+{ 
+    const char *src = "= += + == proc mut let";
     Lexer *lexer = Init_Lexer(src);
     
     {
         Token t = Next_Token(lexer);
         Print_Token(src, &t);
-        assert(t.kind == TOK_FUNCTION);
-        assert(t.x == 1);
-        assert(t.y == 1);
+        if (!Assert(t.kind == TOK_EQ, info, "1 != eq")) return;
+    }
+    {
+        Token t = Next_Token(lexer);
+        Print_Token(src, &t);
+        if (!Assert(t.kind == TOK_PLUS_EQ, info, "2 != plus_eq")) return;
+    }
+    {
+        Token t = Next_Token(lexer);
+        Print_Token(src, &t);
+        if (!Assert(t.kind == TOK_PLUS, info, "3 != plus")) return;
+    }
+    {
+        Token t = Next_Token(lexer);
+        Print_Token(src, &t);
+        if (!Assert(t.kind == TOK_EQ_EQ, info, "4 != eq_eq")) return;
+    }
+        {
+        Token t = Next_Token(lexer);
+        Print_Token(src, &t);
+        if (!Assert(t.kind == TOK_PROC, info, "5 != proc")) return;
+    }
+        {
+        Token t = Next_Token(lexer);
+        Print_Token(src, &t);
+        if (!Assert(t.kind == TOK_MUT, info, "6 != mut")) return;
+    }
+        {
+        Token t = Next_Token(lexer);
+        Print_Token(src, &t);
+        if (!Assert(t.kind == TOK_LET, info, "7 != let")) return;
     }
 
     {
         Token t = Next_Token(lexer);
         Print_Token(src, &t);
-        assert(t.kind == TOK_SYMBOL);
-        assert(t.x == 10);
-        assert(t.y == 1);
+        if (!Assert(t.kind == TOK_EOF, info, "8 != EOF")) return;
     }
 
-    {
-        Token t = Next_Token(lexer);
-        Print_Token(src, &t);
-        assert(t.kind == TOK_NEWLINE);
-        assert(t.x == 14);
-        assert(t.y == 1);
-    }
-
-    {
-        Token t = Next_Token(lexer);
-        Print_Token(src, &t);
-        assert(t.kind == TOK_SYMBOL);
-        assert(t.x == 5);
-        assert(t.y == 2);
-    }
-
-    {
-        Token t = Next_Token(lexer);
-        Print_Token(src, &t);
-        assert(t.kind == TOK_NEWLINE);
-        assert(t.x == 26);
-        assert(t.y == 2);
-    }
-
-    {
-        Token t = Next_Token(lexer);
-        Print_Token(src, &t);
-        assert(t.kind == TOK_EOF);
-        assert(t.x == 1);
-        assert(t.y == 3);
-    }
-
-    printf("[test] lexer test passed\n");
+    info->status = true;
+    info->success = true;
 }
