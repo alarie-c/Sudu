@@ -4,7 +4,7 @@
 #define NO_ESCAPES false
 #define LIST_GROWTH_FACTOR 2
 #define CHECK_LIST_COMPAT_TYPE(list, type) ((list)->size == sizeof(type))
-#include "tests.h"
+#include "util/tests.h"
 #include <stddef.h>
 #include <stdbool.h>
 

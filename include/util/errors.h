@@ -8,9 +8,9 @@
 #define TERM_RED "[31m"
 #define TERM_MAGENTAB "[35;1m"
 #define INIT_ERROR_CAPACITY 64
-#include "tests.h"
+#include "util/tests.h"
+#include "util/common.h"
 #include <stddef.h>
-#include <common.h>
 
 //-------------------------------------------------------------------------------//
 // error implementation

@@ -3,10 +3,10 @@
 #define CHECK_NONZERO(node) if ((node) == 0) return 0
 #define PRINT_NODE(id) Print_Node(self->nodes, id, 2)
 #define PRINT_TOKEN(tk) Print_Token(self->src, &tk)
-#include "ast.h"
-#include "common.h"
-#include "tests.h"
-#include "lexer.h"
+#include "frontend/ast.h"
+#include "frontend/lexer.h"
+#include "util/common.h"
+#include "util/tests.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

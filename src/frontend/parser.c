@@ -1,9 +1,9 @@
-#include "parser.h"
-#include "ast.h"
-#include "common.h"
-#include "tests.h"
-#include "lexer.h"
-#include "errors.h"
+#include "frontend/parser.h"
+#include "frontend/ast.h"
+#include "frontend/lexer.h"
+#include "util/common.h"
+#include "util/tests.h"
+#include "util/errors.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

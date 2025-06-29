@@ -2,8 +2,8 @@
 #define LEXER_H
 #define INIT_CAPACITY 1024
 #define PRINT_SPAN_INTERNALS true
-#include "tests.h"
-#include "common.h"
+#include "util/tests.h"
+#include "util/common.h"
 #include <stddef.h>
 #include <stdbool.h>
 

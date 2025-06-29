@@ -1,6 +1,6 @@
-#include "lexer.h"
-#include "common.h"
-#include "tests.h"
+#include "frontend/lexer.h"
+#include "util/common.h"
+#include "util/tests.h"
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>

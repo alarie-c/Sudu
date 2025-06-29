@@ -5,12 +5,16 @@ To be implemented as a bytecode interpreter on a virtual machine...
 Statically and explicitly typed, with some flexibility.
 
 ```
-greeting = func(name: str)
-    print("Hello, ${name}")
+proc get_length(string: str) -> uint
+    return string.len()
 end
 
-main = func()
-    greeting("World")
+proc greeting(name: str, len: uint)
+    print("Hello, $name! Your name is $len characters long!")
+end
+
+proc main()
+    greeting("Steve", get_length(steve))
 end
 ```
 

@@ -1,6 +1,6 @@
-#include "errors.h"
-#include "common.h"
-#include "tests.h"
+#include "util/errors.h"
+#include "util/common.h"
+#include "util/tests.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>

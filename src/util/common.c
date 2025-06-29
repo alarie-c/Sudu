@@ -1,5 +1,5 @@
-#include "common.h"
-#include "tests.h"
+#include "util/common.h"
+#include "util/tests.h"
 #include <string.h>
 #include <stddef.h>
 #include <stdbool.h>

@@ -1,8 +1,8 @@
-#include "lexer.h"
-#include "parser.h"
-#include "errors.h"
-#include "common.h"
-#include "tests.h"
+#include "frontend/lexer.h"
+#include "frontend/parser.h"
+#include "util/errors.h"
+#include "util/common.h"
+#include "util/tests.h"
 #include <stdio.h>
 
 void tests()

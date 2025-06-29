@@ -1,8 +1,8 @@
 #ifndef AST_H
 #define AST_H
 #define INIT_PROGRAM_CAPACITY 64
-#include "lexer.h"
-#include "common.h"
+#include "frontend/lexer.h"
+#include "util/common.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

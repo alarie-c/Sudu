@@ -1,6 +1,6 @@
-#include "ast.h"
-#include "lexer.h"
-#include "common.h"
+#include "frontend/ast.h"
+#include "frontend/lexer.h"
+#include "util/common.h"
 #include <stdbool.h>
 #include <stddef.h>
 
