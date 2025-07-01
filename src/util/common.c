@@ -7,6 +7,36 @@
 #include <stdio.h>
 
 //-------------------------------------------------------------------------------//
+// tokens methods
+//-------------------------------------------------------------------------------//
+
+void Print_Token(const char *src, Token const *self)
+{
+    // size_t y = self->span.y;
+    // size_t x = self->span.x;
+
+    size_t pos = self->span.pos;
+    size_t len = self->span.len;
+
+    const char *type = TOKEN_KIND_NAMES[self->kind];
+    
+    // buffer is always big enough for an escape sequence if needed
+    size_t size = self->span.len + 1;
+    size_t buffer_size = size >= 3 ? size : 3;
+    char lex[buffer_size];
+    Get_Lexeme(lex, buffer_size, src, &self->span, WITH_ESCAPES);
+
+    if (PRINT_SPAN_INTERNALS)
+    {
+        printf("%zu:%zu | %zu @ %zu | %s | '%s'\n", self->y, self->x, pos, len, type, lex);
+    }
+    else
+    {
+        printf("%s | '%s'\n", type, lex);
+    }
+}
+
+//-------------------------------------------------------------------------------//
 // list methods
 //-------------------------------------------------------------------------------//
 

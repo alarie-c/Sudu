@@ -1,4 +1,3 @@
-#include "frontend/lexer.h"
 #include "frontend/parser.h"
 #include "util/errors.h"
 #include "util/common.h"
@@ -12,25 +11,9 @@ void tests()
 
     Load_Test(env,
         Create_Test(
-            Test_Binary_Expression,
-            "Binary Expression Parser",
+            Test_Parser,
+            "Parser",
             TEST_TYPE_MANUAL
-        )
-    );
-
-    Load_Test(env,
-        Create_Test(
-            Test_Grouping_Expression,
-            "Grouping Expression Parser",
-            TEST_TYPE_MANUAL
-        )
-    );
-
-    Load_Test(env,
-        Create_Test(
-            Test_Lexer,
-            "Lexer Tokenization",
-            TEST_TYPE_ASSERTION
         )
     );
 
