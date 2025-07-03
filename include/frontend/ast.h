@@ -17,6 +17,7 @@ typedef enum _Node_Type
     AST_PROGRAM = 0,
     AST_BINARY_EXPR,
     AST_ASSIGN_EXPR,
+    AST_CALL_EXPR,
     AST_GROUPING,
     AST_SYMBOL,
     AST_INTEGER,
@@ -53,6 +54,12 @@ typedef struct _Ast_Assign_Expr
     size_t value;
 } Ast_Assign_Expr;
 
+typedef struct _Ast_Call_Expr
+{
+    size_t symbol;
+    List args; /* List<size_t> */
+} Ast_Call_Expr;
+
 //===============================================================================//
 // AST NODES
 //===============================================================================//
@@ -66,6 +73,7 @@ typedef struct _Ast_Node
         List v_root;
         Ast_Binary_Expr v_binary_expr;
         Ast_Assign_Expr v_assign_expr;
+        Ast_Call_Expr v_call_expr;
         char *v_symbol;
         float v_float;
         int32_t v_integer;

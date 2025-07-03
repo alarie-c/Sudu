@@ -3,6 +3,7 @@
 
 #define INIT_TOKEN_CAPACITY 1024
 #define INIT_PROGRAM_CAPACITY 64
+#define INIT_PROC_ARGS_ARITY 4
 
 #include "frontend/ast.h"
 #include "util/tests.h"

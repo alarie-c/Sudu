@@ -152,6 +152,11 @@ static Token lex_next_token(lexer *self)
             tk = (Token) {TOK_PERCENT, LEX_SPAN(1), self->x, self->y};
             break;
         }
+        case ',':
+        {
+            tk = (Token) {TOK_COMMA, LEX_SPAN(1), self->x, self->y};
+            break;
+        }
         
         // handle comments
         case '#':
@@ -363,8 +368,7 @@ static size_t parse_literal(parser *self)
                 return 0;
             }
 
-            Span node_span = (Span) {tk.span.pos, tk.span.len};
-            return Node_Build_Integer(self->map, node_span, value);
+            return Node_Build_Integer(self->map, tk.span, value);
         }
 
         case TOK_FLOAT:
@@ -378,15 +382,12 @@ static size_t parse_literal(parser *self)
                 return 0;
             }
 
-            Span node_span = (Span) {tk.span.pos, tk.span.len};
-            return Node_Build_Float(self->map, node_span, value);
+            return Node_Build_Float(self->map, tk.span, value);
         }
 
         case TOK_SYMBOL:
         {
-            const char *raw = Get_Lexeme(self->src, tk.span.pos, tk.span.len);
-            Span node_span = (Span) {tk.span.pos, tk.span.len};
-            return Node_Build_Symbol(self->map, node_span, raw);
+            return Node_Build_Symbol(self->map, tk.span, self->src);
         }
 
         case TOK_LPAREN:
@@ -420,10 +421,85 @@ static size_t parse_literal(parser *self)
     }
 }
 
-static size_t parse_binary(parser *self)
+static size_t parse_call(parser *self)
 {
     Token tk = current(self);
     size_t expr = parse_literal(self);
+    PARSER_CHECK_INVALID_NODE(expr);
+
+    if (peek(self).kind == TOK_LPAREN)
+    {
+        next(self); /* LPAREN */
+        next(self); /* beginning of args */
+
+        /* initialize a list of arguments */
+        List args = List_New(sizeof(size_t), INIT_PROC_ARGS_ARITY);
+        if (args.capacity == 0)
+            return 0;
+
+        if (current(self).kind != TOK_RPAREN)
+        {
+            do {
+                printf("looking for args...\n");
+                size_t arg = parse_expr(self);
+                PARSER_CHECK_INVALID_NODE(arg);
+
+                /*(FIX) deep copying an int god help us all */
+                List_Add(&args, &arg);
+                next(self);
+                
+                /* look for COMMA and continue */
+                Token current_token = current(self);
+                if (current_token.kind == TOK_COMMA)
+                {
+                    printf("got a comma\n");
+                    next(self); /* COMMA */
+                    continue;
+                }
+
+                /* look for the closing RPAREN */
+                else if (current_token.kind == TOK_RPAREN)
+                {
+                    printf("got a rparen\n");
+                    break;
+                }
+
+                /* otherwise throw an error */
+                else
+                {
+                    PARSER_EMIT_ERR(
+                        ERR_SYNTAX,
+                        current_token.x,
+                        current_token.y,
+                        current_token.span,
+                        "expected closing ')' after procedure call arguments"
+                    );
+                    return 0;
+                }
+            } while(1);
+        }
+
+        /*(TEMP)*/ if (current(self).kind != TOK_RPAREN)
+        {
+            printf("NOT RPAREN\n");
+            return 0;
+        }
+
+        Span span = (Span) {tk.span.pos, tk.span.len + current(self).span.len};
+        Ast_Call_Expr call_expr = (Ast_Call_Expr) {.symbol = expr, .args = args};
+        Ast_Node node = Node_Build(AST_CALL_EXPR, span);
+        node.v_call_expr = call_expr;
+
+        expr = Push_And_Get_Id(self->map, node);
+    }
+
+    return expr;
+}
+
+static size_t parse_binary(parser *self)
+{
+    Token tk = current(self);
+    size_t expr = parse_call(self);
     PARSER_CHECK_INVALID_NODE(expr);
     
     Ast_Op_Kind op = Get_Binary_Infix_Operator(peek(self).kind);
@@ -515,8 +591,26 @@ static bool test_parser(Test_Info *info, const char *src)
 
 void Test_Parser(Test_Info *info)
 {
-    const char *src = "(5 + 10";
-    if (!test_parser(info, src)) return;
+    {
+        /* force the list to grow */
+        const char *src = "add(1, 2, 3, 4, 5, 6, 7, 8, 9)";
+        if (!test_parser(info, src)) return;
+    }
+    {
+        const char *src = "add()";
+        if (!test_parser(info, src)) return;
+    }
+    {
+        /* grouping inside a call*/
+        const char *src = "add(5, (foo + bar))";
+        if (!test_parser(info, src)) return;
+    }
+    {
+        /* call inside a grouping */
+        const char *src = "(foo(1, 3, 5 + 10) + bar)";
+        if (!test_parser(info, src)) return;
+    }
+    
 
     info->success = true;
     info->status = true;

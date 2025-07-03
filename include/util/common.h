@@ -33,7 +33,7 @@ void *List_Get(List *self, size_t n);
 
 /// @brief Push something to the list.
 /// @param self the list itself.
-/// @param element the item to add, shallow copy into
+/// @param element the item to add, deep copy into
 /// the array, free'd at the end of scope.
 void List_Add(List *self, void* element);
 
@@ -88,6 +88,7 @@ typedef enum _Token_Kind
     TOK_STAR,
     TOK_SLASH,
     TOK_PERCENT,
+    TOK_COMMA,
     TOK_SYMBOL,
     TOK_INTEGER,
     TOK_FLOAT,
@@ -111,6 +112,7 @@ static const char *TOKEN_KIND_NAMES[NUM_TOKEN_KINDS] = {
     [TOK_STAR] = "STAR",
     [TOK_SLASH] = "SLASH",
     [TOK_PERCENT] = "PERCENT",
+    [TOK_COMMA] = "COMMA",
     [TOK_SYMBOL] = "SYMBOL",
     [TOK_INTEGER] = "INTEGER",
     [TOK_FLOAT] = "FLOAT",

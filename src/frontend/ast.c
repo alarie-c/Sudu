@@ -53,6 +53,20 @@ void Print_Node(List *nodes, size_t id, int i)
             Print_Node(nodes, self->v_assign_expr.value, i + 2);
             break;
         }
+        case AST_CALL_EXPR:
+        {
+            printf("CALL EXPR #%zu:\n", self->v_call_expr.args.count);
+            Print_Node(nodes, self->v_call_expr.symbol, i + 2);
+            
+            for (size_t j = 0; j < self->v_call_expr.args.count; j++)
+            {
+                /*(FIX) this is a fucking catastrophe */
+                size_t *id = (size_t*)List_Get(&self->v_call_expr.args, j);
+                Print_Node(nodes, *id, i + 2);
+            }
+                
+            break;
+        }
         case AST_FLOAT:
         {
             printf("FLOAT: %f\n", self->v_float);
