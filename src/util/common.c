@@ -12,28 +12,21 @@
 
 void Print_Token(const char *src, Token const *self)
 {
-    // size_t y = self->span.y;
-    // size_t x = self->span.x;
-
     size_t pos = self->span.pos;
     size_t len = self->span.len;
-
     const char *type = TOKEN_KIND_NAMES[self->kind];
+    const char *lex = Get_Lexeme(src, self->span.pos, self->span.len);
     
-    // buffer is always big enough for an escape sequence if needed
-    size_t size = self->span.len + 1;
-    size_t buffer_size = size >= 3 ? size : 3;
-    char lex[buffer_size];
-    Get_Lexeme(lex, buffer_size, src, &self->span, WITH_ESCAPES);
+    if (self->kind == TOK_NEWLINE)
+    {
+        free((void *)lex);
+        lex = "\\n";
+    }
+       
+    printf("%zu:%zu | %zu+%zu | %s | '%s'\n", self->y, self->x, pos, len, type, lex);   
 
-    if (PRINT_SPAN_INTERNALS)
-    {
-        printf("%zu:%zu | %zu @ %zu | %s | '%s'\n", self->y, self->x, pos, len, type, lex);
-    }
-    else
-    {
-        printf("%s | '%s'\n", type, lex);
-    }
+    if (self->kind != TOK_NEWLINE)
+        free((void *)lex);
 }
 
 //-------------------------------------------------------------------------------//
@@ -95,33 +88,18 @@ void List_Free(List *self)
 // lexeme methods
 //-------------------------------------------------------------------------------//
 
-size_t Lexeme_Buffer_Len(Span const *span)
+char *Get_Lexeme(const char *src, size_t pos, size_t len)
 {
-    size_t size = span->len + 1; /* plus one for the null terminator */
-    return size >= 3 ? size : 3;
-}
+    if (!src) return "\0";
 
-void Get_Lexeme(char *buf, size_t buf_size, const char *src, Span const *span, bool escapes)
-{
-    if (!src || !buf) {
-        snprintf(buf, buf_size, "\\0");
-        return;
-    }
+    /* allocate the string dynamically */
+    char *string = malloc(len + 1);
+    if (!string) return "\0";
 
-    size_t pos = span->pos;
-    size_t len = span->len;
-    size_t max_len = buf_size - 1;
-    if (len > max_len) len = max_len;
+    memcpy(string, src + pos, len);
+    string[len] = '\0';
 
-    memcpy(buf, src + pos, len);
-    buf[len] = '\0';
-
-    if (escapes == false) return;
-
-    if (strncmp(buf, "\n", 2) == 0)
-        snprintf(buf, buf_size, "\\n");
-    else if (strncmp(buf, "\0", 2) == 0)
-        snprintf(buf, buf_size, "\\0");
+    return string;
 }
 
 bool Cmp_Lexeme(const char *src, const Span *span, const char *lit)

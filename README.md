@@ -22,8 +22,8 @@ end
 
 ### General
 - [x] Rework to use single-function interface with private internal state structs
-- [ ] Rework into one `frontend.h` interface with `parser.c` and `lexer.c` implementations
-- [ ] Update the build script to allow for tests/compilation and for aborting on compilation errors
+- [x] Rework into one `frontend.h` interface with `parser.c` and `lexer.c` implementations
+- [x] Update the build script to allow for tests/compilation and for aborting on compilation errors
 - [ ] Implement binary postfixup algorithm for the binary expression parser
 - [x] Create a generalized List structure for dynamic arrays
 - [x] Implement `List<Error>` for error collection

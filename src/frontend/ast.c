@@ -1,18 +1,17 @@
 #include "frontend/ast.h"
-#include "frontend/lexer.h"
 #include "util/common.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
 
-//-------------------------------------------------------------------------------//
-// node methods
-//-------------------------------------------------------------------------------//
+//===============================================================================//
+// NODE FUNCTIONS
+//===============================================================================//
 
 size_t Push_And_Get_Id(List *nodes, Ast_Node node)
 {
-    if (!nodes || !CHECK_LIST_COMPAT_TYPE(nodes, Ast_Node))
+    if (!nodes || !CHECK_LIST_COMPATIBILITY(nodes, Ast_Node))
         return 0;
     
     size_t id = nodes->count;
@@ -22,7 +21,7 @@ size_t Push_And_Get_Id(List *nodes, Ast_Node node)
 
 void Print_Node(List *nodes, size_t id, int i)
 {
-    if (!nodes || id == 0 || !CHECK_LIST_COMPAT_TYPE(nodes, Ast_Node))
+    if (!nodes || id == 0 || !CHECK_LIST_COMPATIBILITY(nodes, Ast_Node))
         return;
 
     /* print indent spaces */
@@ -94,12 +93,14 @@ void Node_Free(Ast_Node *self)
             free(self->v_symbol);
             break;
         }
+
+        default: break;
     }
 }
 
-//-------------------------------------------------------------------------------//
-// node builders
-//-------------------------------------------------------------------------------//
+//===============================================================================//
+// NODE BUILDER FUNCTIONS
+//===============================================================================//
 
 Ast_Node Node_Build(Node_Type type, Span span)
 {
@@ -129,11 +130,8 @@ size_t Node_Build_Grouping(List *nodes, Span const span, size_t inner)
 
 size_t Node_Build_Symbol(List *nodes, Span const span, const char *src)
 {
-    size_t buf_size = Lexeme_Buffer_Len(&span);
-    char buffer[buf_size];
-    Get_Lexeme(buffer, buf_size, src, &span, NO_ESCAPES);
-
+    char *raw = Get_Lexeme(src, span.pos, span.len);
     Ast_Node node = Node_Build(AST_SYMBOL, span);
-    node.v_symbol = strdup(buffer);
+    node.v_symbol = strdup(raw);
     return Push_And_Get_Id(nodes, node); 
 }

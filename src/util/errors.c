@@ -112,11 +112,9 @@ void print_invalid_return(Error const *self)
         return;
     }
     
-    size_t buf_size = Lexeme_Buffer_Len(&line.span);
-    char content[buf_size];
-    Get_Lexeme(content, buf_size, src, &line.span, NO_ESCAPES);
-    hide_newlines(content);
-    printf("  |\n  | %s\n  | %s%s", content, TERM_ESC, TERM_RED);
+    char *raw = Get_Lexeme(src, line.span.pos, line.span.len); 
+    hide_newlines(raw);
+    printf("  |\n  | %s\n  | %s%s", raw, TERM_ESC, TERM_RED);
     
     /* Line Start   */ size_t l_start = line.span.pos; 
     /* Line End     */ size_t l_end = line.span.pos + line.span.len - 1; 
@@ -150,12 +148,10 @@ void Print_Error(const char *src, const char *path, Error const *self)
         printf("<Error fetching line content>");
         return;
     }
-    
-    size_t buf_size = Lexeme_Buffer_Len(&line.span);
-    char content[buf_size];
-    Get_Lexeme(content, buf_size, src, &line.span, NO_ESCAPES);
-    hide_newlines(content);
-    printf("  |\n  | %s\n  | %s%s", content, TERM_ESC, TERM_RED);
+
+    char *raw = Get_Lexeme(src, line.span.pos, line.span.len); 
+    hide_newlines(raw);
+    printf("  |\n  | %s\n  | %s%s", raw, TERM_ESC, TERM_RED);
     
     /* Line Start   */ size_t l_start = line.span.pos; 
     /* Line End     */ size_t l_end = line.span.pos + line.span.len - 1; 

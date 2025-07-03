@@ -1,4 +1,4 @@
-#include "frontend/parser.h"
+#include "frontend/frontend.h"
 #include "util/errors.h"
 #include "util/common.h"
 #include "util/tests.h"
