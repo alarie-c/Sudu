@@ -17,6 +17,7 @@ typedef size_t Node_Idx;
 typedef enum _Node_Type
 {
     AST_PROGRAM = 0,
+    AST_VARIABLE_DECL,
     AST_BINARY_EXPR,
     AST_ASSIGN_EXPR,
     AST_CALL_EXPR,
@@ -42,6 +43,13 @@ typedef enum _Ast_Op_Kind
 //===============================================================================//
 // COMPLEX NODE STRUCTS
 //===============================================================================//
+
+typedef struct _Ast_Variable_Decl
+{
+    Node_Idx symbol;
+    Node_Idx initializer;
+    bool mutability;
+} Ast_Variable_Decl;
 
 typedef struct _Ast_Binary_Expr
 {
@@ -84,6 +92,7 @@ typedef struct _Ast_Node
     Node_Type type;
     union {
         List v_root;
+        Ast_Variable_Decl v_variable_decl;
         Ast_Binary_Expr v_binary_expr;
         Ast_Assign_Expr v_assign_expr;
         Ast_Call_Expr v_call_expr;

@@ -35,8 +35,8 @@ end
     - [ ] Unary Prefix Expressions
     - [ ] Function Declarations
     - [x] Function Calls
-    - [ ] Variable Declaratiosn
-    - [ ] Variable Assignment
+    - [x] Variable Declaratiosn
+    - [x] Variable Assignment
 - [ ] Sematic Analyzer
     - [ ] Type Checker
     - [ ] Name Resolution

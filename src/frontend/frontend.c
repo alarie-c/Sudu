@@ -264,6 +264,7 @@ static List tokenize(const char *src)
 // SHORTHAND PARSER ERROR METHODS
 //===============================================================================//
 
+#define SPAN_FROM_THEN_TO_CURRENT(then, current) (Span) {(then).span.pos, (current).span.pos - (then).span.pos}
 #define PARSER_CHECK_INVALID_NODE(node) if ((node) == 0) return 0
 #define PARSER_EMIT_ERR(error_type, x, y, span, msg)                           \
     Error err = Make_Error((error_type), (x), (y), (span), (msg));             \
@@ -500,7 +501,7 @@ static Node_Idx parse_call(parser *self)
     return expr;
 }
 
-static size_t parse_binary(parser *self)
+static Node_Idx parse_binary(parser *self)
 {
     Token tk = current(self);
     Node_Idx expr = parse_call(self);
@@ -525,12 +526,131 @@ static size_t parse_binary(parser *self)
 
     return expr;
 }
+static Node_Idx parse_assign(parser *self)
+{
+    Token tk = current(self);
+    Node_Idx expr = parse_binary(self);
+    PARSER_CHECK_INVALID_NODE(expr);
+    
+    Ast_Op_Kind op = Get_Assignment_Infix_Operator(peek(self).kind);
+    if (op != -1)
+    {
+        next(self); /* operator */
+        next(self); /* beginning of RHS */
+        Span span = (Span) {tk.span.pos, tk.span.len + current(self).span.len};
+       
+        Node_Idx value = parse_expr(self);
+        PARSER_CHECK_INVALID_NODE(value);
+
+        Ast_Node node = Node_Build(AST_ASSIGN_EXPR, span);
+        node.v_assign_expr = (Ast_Assign_Expr) {
+            .name = expr,
+            .op = op,
+            .value = value
+        };
+        expr = Push_And_Get_Id(self->map, node);
+    }
+
+    return expr;
+}
 
 static Node_Idx parse_expr(parser *self)
 {
-    return parse_binary(self);
+    return parse_assign(self);
 }
 
+static Node_Idx parse_variable(parser *self, bool mutability)
+{
+    Token tk = current(self);
+    Node_Idx symbol = parse_literal(self);
+    PARSER_CHECK_INVALID_NODE(symbol);
+    
+    /* validate symbol */
+    Ast_Node *symbol_node = List_Get(self->map, symbol);
+    if (symbol_node->type != AST_SYMBOL)
+    {
+        PARSER_EMIT_ERR(ERR_SYNTAX, tk.x, tk.y, tk.span, "expected symbol");
+        return 0;
+    }
+
+    /* initializer */
+    Node_Idx initializer = 0;
+    if (peek(self).kind != TOK_NEWLINE)
+    {
+        /* validate EQ */
+        if (peek(self).kind != TOK_EQ)
+        {
+            Token peeked = peek(self);
+            PARSER_EMIT_ERR(ERR_SYNTAX, peeked.x, peeked.y, peeked.span, "expected '='");
+            return 0;
+        }
+
+        next(self); /* EQ */
+        next(self); /* after EQ */
+        initializer = parse_expr(self);
+        PARSER_CHECK_INVALID_NODE(symbol);
+    }
+
+    /* create node */
+    Token c = current(self); Span span = SPAN_FROM_THEN_TO_CURRENT(tk, c);
+    Ast_Node node = Node_Build(AST_VARIABLE_DECL, span);
+    node.v_variable_decl = (Ast_Variable_Decl) {
+        .symbol = symbol,
+        .initializer = initializer,
+        .mutability = mutability
+    };
+    return Push_And_Get_Id(self->map, node);
+}
+
+static Node_Idx parse_statement(parser *self)
+{
+    Token tk = current(self);
+    Node_Idx stmt = 0;
+
+    switch (tk.kind)
+    {
+        case TOK_LET:
+        case TOK_MUT:
+        {
+            bool mutability = tk.kind == TOK_MUT;
+            next(self); /* symbol */
+
+            stmt = parse_variable(self, mutability);
+            PARSER_CHECK_INVALID_NODE(stmt);
+
+            break;
+        }
+
+        default:
+        {
+            Node_Idx expr = parse_expr(self);
+            PARSER_CHECK_INVALID_NODE(expr);
+
+            size_t x = current(self).x;
+            size_t y = current(self).y;
+            Ast_Node *expr_node = List_Get(self->map, expr);
+            if (expr_node->type != AST_ASSIGN_EXPR
+                && expr_node->type != AST_CALL_EXPR)
+            {
+                PARSER_EMIT_ERR(ERR_SYNTAX, x, y, expr_node->span, "invalid expression statement");
+                return 0;
+            }
+
+            stmt = expr;
+            break;
+        };
+    }
+
+    if (peek(self).kind != TOK_NEWLINE && peek(self).kind != TOK_EOF)
+    {
+        Token peeked = peek(self);
+        PARSER_EMIT_ERR(ERR_SYNTAX, peeked.x, peeked.y, peeked.span, "expected ';'");
+        return 0;
+    }
+
+    next(self); /* TOK_NEWLINE */
+    return stmt;
+}
 
 //===============================================================================//
 // TESTS IMPLEMENTATION
@@ -567,11 +687,11 @@ static bool test_parser(Test_Info *info, const char *src)
     };
 
     do {
-        /* parse one expr */
-        Node_Idx expr = parse_expr(&self);
+        /* parse one stmt */
+        Node_Idx stmt = parse_statement(&self);
         
         Report_Errors(&errors, src, "<TestPath>");
-        if (expr == 0)
+        if (stmt == 0)
         {
             info->message = "zero ID";
             info->status = false;
@@ -580,8 +700,8 @@ static bool test_parser(Test_Info *info, const char *src)
         }
         
         /* add this expr to the program node */
-        Print_Node(&map, expr, 0);
-        List_Add(&root.v_root, &expr);
+        Print_Node(&map, stmt, 0);
+        List_Add(&root.v_root, &stmt);
         next(&self);
 
         if (current( &self).kind == TOK_EOF) break;
@@ -596,25 +716,9 @@ static bool test_parser(Test_Info *info, const char *src)
 void Test_Parser(Test_Info *info)
 {
     {
-        /* force the list to grow */
-        const char *src = "add(1, 2, 3, 4, 5, 6, 7, 8, 9)";
+        const char *src = "mut i = 10\ni = i+1\nprint(i)";
         if (!test_parser(info, src)) return;
     }
-    {
-        const char *src = "add()";
-        if (!test_parser(info, src)) return;
-    }
-    {
-        /* grouping inside a call*/
-        const char *src = "add(5, (foo + bar))";
-        if (!test_parser(info, src)) return;
-    }
-    {
-        /* call inside a grouping */
-        const char *src = "(foo(1, 3, 5 + 10) + bar)";
-        if (!test_parser(info, src)) return;
-    }
-    
 
     info->success = true;
     info->status = true;

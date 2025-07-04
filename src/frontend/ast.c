@@ -39,6 +39,16 @@ void Print_Node(List *nodes, Node_Idx id, int i)
     printf("[%zu] : ", id);
     switch (self->type)
     {
+        case AST_VARIABLE_DECL:
+        {
+            printf("VARIABLE DECL (MUT = %i):\n", self->v_variable_decl.mutability);
+            Print_Node(nodes, self->v_variable_decl.symbol, i + 2);
+            
+            if (self->v_variable_decl.initializer != 0)
+                Print_Node(nodes, self->v_variable_decl.initializer, i + 2);
+
+            break;
+        }
         case AST_BINARY_EXPR:
         {
             printf("BINARY EXPR of %s:\n", AST_OP_NAMES[self->v_binary_expr.op]);
