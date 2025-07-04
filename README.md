@@ -28,7 +28,6 @@ end
 - [x] Create a generalized List structure for dynamic arrays
 - [x] Implement `List<Error>` for error collection
 - [x] Implement `List<Ast_Node>` for the parser
-- [ ] Find a better way to use List cus deep copying everything is ATROCIOUS D:
 
 ### Systems
 - [ ] Parser

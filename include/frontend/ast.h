@@ -6,6 +6,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+typedef size_t Node_Idx;
+
 //===============================================================================//
 // AST NODE HELPER ENUMS
 //===============================================================================//
@@ -18,6 +20,7 @@ typedef enum _Node_Type
     AST_BINARY_EXPR,
     AST_ASSIGN_EXPR,
     AST_CALL_EXPR,
+    AST_LIST,
     AST_GROUPING,
     AST_SYMBOL,
     AST_INTEGER,
@@ -43,22 +46,32 @@ typedef enum _Ast_Op_Kind
 typedef struct _Ast_Binary_Expr
 {
     Ast_Op_Kind op;
-    size_t lhs;
-    size_t rhs;
+    Node_Idx lhs;
+    Node_Idx rhs;
 } Ast_Binary_Expr;
 
 typedef struct _Ast_Assign_Expr
 {
     Ast_Op_Kind op;
-    size_t name;
-    size_t value;
+    Node_Idx name;
+    Node_Idx value;
 } Ast_Assign_Expr;
 
 typedef struct _Ast_Call_Expr
 {
-    size_t symbol;
-    List args; /* List<size_t> */
+    Node_Idx symbol;
+    Node_Idx args;
 } Ast_Call_Expr;
+
+typedef struct _Ast_List
+{
+    Node_Idx *nodes;
+    size_t count;
+    size_t capacity;
+} Ast_List;
+
+Ast_List Ast_List_New(size_t init_capacity);
+void Ast_List_Push(Ast_List *self, Node_Idx node);
 
 //===============================================================================//
 // AST NODES
@@ -74,10 +87,11 @@ typedef struct _Ast_Node
         Ast_Binary_Expr v_binary_expr;
         Ast_Assign_Expr v_assign_expr;
         Ast_Call_Expr v_call_expr;
+        Ast_List v_list;
         char *v_symbol;
         float v_float;
         int32_t v_integer;
-        size_t v_inner;
+        Node_Idx v_inner;
     };
     Span span;
 } Ast_Node;
@@ -86,13 +100,13 @@ typedef struct _Ast_Node
 /// @param nodes the node map.
 /// @param node the node instance itself.
 /// @return the index of the node in the map.
-size_t Push_And_Get_Id(List *nodes, Ast_Node node);
+Node_Idx Push_And_Get_Id(List *nodes, Ast_Node node);
 
 /// @brief Simple prints a node using a recursive method..
 /// @param nodes the node map.
 /// @param id the index of the node in the map.
 /// @param i number of spaces worth of indentation.
-void Print_Node(List *nodes, size_t id, int i);
+void Print_Node(List *nodes, Node_Idx id, int i);
 
 /// @brief Frees a node, if neccesary. Really only needed.
 /// for nodes that own dynamically allocated memory, this does not
@@ -116,28 +130,28 @@ Ast_Node Node_Build(Node_Type type, Span span);
 /// @param span the span of the node.
 /// @param value the integer value.
 /// @return a node of type AST_INTEGER.
-size_t Node_Build_Integer(List *nodes, Span const span, int32_t value);
+Node_Idx Node_Build_Integer(List *nodes, Span const span, int32_t value);
 
 /// @brief Creates an float node from the value provided.
 /// @param nodes the node map to be inserted into.
 /// @param span the span of the node.
 /// @param value the float value.
 /// @return a node of type AST_FLOAT.
-size_t Node_Build_Float(List *nodes, Span const span, float value);
+Node_Idx Node_Build_Float(List *nodes, Span const span, float value);
 
 /// @brief Creates a grouping node from the inner node ID provided.
 /// @param nodes the node map to be inserted into   .
 /// @param span the span of the node.
 /// @param inner the ID/index of the node inside the grouping.
 /// @return a node of type AST_GROUPING.
-size_t Node_Build_Grouping(List *nodes, Span const span, size_t inner);
+Node_Idx Node_Build_Grouping(List *nodes, Span const span, Node_Idx inner);
 
 /// @brief Creates a symbol node from the name provided.
 /// @param nodes the node map to be inserted into  .
 /// @param span the span of the node.
 /// @param src source code to extract the lexeme from.
 /// @return a node of type AST_SYMBOL.
-size_t Node_Build_Symbol(List *nodes, Span const span, const char *src);
+Node_Idx Node_Build_Symbol(List *nodes, Span const span, const char *src);
 
 //===============================================================================//
 // STATIC MAPS AND GETTERS

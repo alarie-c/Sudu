@@ -72,7 +72,6 @@ void List_Add(List *self, void* element)
         self->capacity = new_capacity;
     }
 
-    /* deep copy the data into the array */
     void *dest = (char *)self->data + self->count * self->size;
     memcpy(dest, element, self->size);
     self->count++;

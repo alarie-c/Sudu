@@ -9,17 +9,17 @@
 // NODE FUNCTIONS
 //===============================================================================//
 
-size_t Push_And_Get_Id(List *nodes, Ast_Node node)
+Node_Idx Push_And_Get_Id(List *nodes, Ast_Node node)
 {
     if (!nodes || !CHECK_LIST_COMPATIBILITY(nodes, Ast_Node))
         return 0;
     
-    size_t id = nodes->count;
+    Node_Idx id = nodes->count;
     List_Add(nodes, &node);
     return id;
 }
 
-void Print_Node(List *nodes, size_t id, int i)
+void Print_Node(List *nodes, Node_Idx id, int i)
 {
     if (!nodes || id == 0 || !CHECK_LIST_COMPATIBILITY(nodes, Ast_Node))
         return;
@@ -55,16 +55,29 @@ void Print_Node(List *nodes, size_t id, int i)
         }
         case AST_CALL_EXPR:
         {
-            printf("CALL EXPR #%zu:\n", self->v_call_expr.args.count);
+            printf("CALL EXPR:\n");
             Print_Node(nodes, self->v_call_expr.symbol, i + 2);
-            
-            for (size_t j = 0; j < self->v_call_expr.args.count; j++)
+            Print_Node(nodes, self->v_call_expr.args, i + 2);
+            break;
+        }
+        case AST_LIST:
+        {
+            printf("LIST:");
+
+            if (self->v_list.count == 0)
             {
-                /*(FIX) this is a fucking catastrophe */
-                size_t *id = (size_t*)List_Get(&self->v_call_expr.args, j);
-                Print_Node(nodes, *id, i + 2);
+                printf(" <Empty>\n");
+                break;
             }
-                
+            else
+            {
+                putchar('\n');
+            }
+            for (size_t j = 0; j < self->v_list.count; j++)
+            {
+                Node_Idx id = self->v_list.nodes[j];
+                Print_Node(nodes, id, i + 2);
+            }
             break;
         }
         case AST_FLOAT:
@@ -108,8 +121,52 @@ void Node_Free(Ast_Node *self)
             break;
         }
 
+        case AST_LIST:
+        {
+            free(self->v_list.nodes);
+            break;
+        }
+
         default: break;
     }
+}
+
+//===============================================================================//
+// SUBTYPE FUNCTIONS
+//===============================================================================//
+
+Ast_List Ast_List_New(size_t init_capacity)
+{
+    Ast_List self = {0};
+    
+    List basic_list = List_New(sizeof(Node_Idx), init_capacity);
+    if (basic_list.capacity == 0) return self;
+
+    self.nodes = basic_list.data;
+    self.capacity = init_capacity;
+    return self;
+}
+
+void Ast_List_Push(Ast_List *self, Node_Idx node)
+{
+    if (!self) return;
+
+    /* grow array if neccesary */
+    if (self->count >= self->capacity)
+    {
+        /*(FIX) grow by 50% not 100%*/
+        size_t new_capacity = (self->capacity != 0)
+                            ? (self->capacity * 2)
+                            : 4;
+        void *new_nodes = realloc(self->nodes, new_capacity * sizeof(Node_Idx));
+        if (!new_nodes) return;
+
+        self->nodes = new_nodes;
+        self->capacity = new_capacity;
+    }
+
+    self->nodes[self->count] = node;
+    self->count++;
 }
 
 //===============================================================================//
@@ -135,7 +192,7 @@ size_t Node_Build_Float(List *nodes, Span const span, float value)
     return Push_And_Get_Id(nodes, node);
 }
 
-size_t Node_Build_Grouping(List *nodes, Span const span, size_t inner)
+size_t Node_Build_Grouping(List *nodes, Span const span, Node_Idx inner)
 {
     Ast_Node node = Node_Build(AST_GROUPING, span);
     node.v_inner = inner;
