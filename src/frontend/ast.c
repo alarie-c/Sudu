@@ -39,7 +39,7 @@ void Print_Node(List *nodes, Node_Idx id, int i)
     printf("[%zu] : ", id);
     switch (self->type)
     {
-        case AST_VARIABLE_DECL:
+        case NODE_VARIABLE:
         {
             printf("VARIABLE DECL (MUT = %i):\n", self->v_variable_decl.mutability);
             Print_Node(nodes, self->v_variable_decl.symbol, i + 2);
@@ -49,28 +49,28 @@ void Print_Node(List *nodes, Node_Idx id, int i)
 
             break;
         }
-        case AST_BINARY_EXPR:
+        case NODE_BINARY:
         {
             printf("BINARY EXPR of %s:\n", AST_OP_NAMES[self->v_binary_expr.op]);
             Print_Node(nodes, self->v_binary_expr.lhs, i + 2);
             Print_Node(nodes, self->v_binary_expr.rhs, i + 2);
             break;
         }
-        case AST_ASSIGN_EXPR:
+        case NODE_ASSIGNMENT:
         {
             printf("ASSIGNMENT EXPR of %s:\n", AST_OP_NAMES[self->v_assign_expr.op]);
             Print_Node(nodes, self->v_assign_expr.name, i + 2);
             Print_Node(nodes, self->v_assign_expr.value, i + 2);
             break;
         }
-        case AST_CALL_EXPR:
+        case NODE_CALL:
         {
             printf("CALL EXPR:\n");
             Print_Node(nodes, self->v_call_expr.symbol, i + 2);
             Print_Node(nodes, self->v_call_expr.args, i + 2);
             break;
         }
-        case AST_LIST:
+        case NODE_LIST:
         {
             printf("LIST:");
 
@@ -90,23 +90,23 @@ void Print_Node(List *nodes, Node_Idx id, int i)
             }
             break;
         }
-        case AST_FLOAT:
+        case NODE_FLOAT:
         {
             printf("FLOAT: %f\n", self->v_float);
             break;
         }
-        case AST_INTEGER:
+        case NODE_INTEGER:
         {
             printf("INTEGER: %d\n", self->v_integer);
             break;
         }
-        case AST_GROUPING:
+        case NODE_GROUPING:
         {
             printf("GROUPING:\n");
             Print_Node(nodes, self->v_inner, i + 2);
             break;
         }
-        case AST_SYMBOL:
+        case NODE_SYMBOL:
         {
             printf("SYMBOL: %s\n", self->v_symbol);
             break;
@@ -125,13 +125,13 @@ void Node_Free(Ast_Node *self)
 
     switch (self->type)
     {
-        case AST_SYMBOL:
+        case NODE_SYMBOL:
         {
             free(self->v_symbol);
             break;
         }
 
-        case AST_LIST:
+        case NODE_LIST:
         {
             free(self->v_list.nodes);
             break;
@@ -183,28 +183,28 @@ void Ast_List_Push(Ast_List *self, Node_Idx node)
 // NODE BUILDER FUNCTIONS
 //===============================================================================//
 
-Ast_Node Node_Build(Node_Type type, Span span)
+Ast_Node Node_Build(Node_Kind type, Span span)
 {
     return (Ast_Node) {.span = span, .type = type};
 }
 
 size_t Node_Build_Integer(List *nodes, Span const span, int32_t value)
 {
-    Ast_Node node = Node_Build(AST_INTEGER, span);
+    Ast_Node node = Node_Build(NODE_INTEGER, span);
     node.v_integer = value;
     return Push_And_Get_Id(nodes, node);
 }
 
 size_t Node_Build_Float(List *nodes, Span const span, float value)
 {
-    Ast_Node node = Node_Build(AST_FLOAT, span);
+    Ast_Node node = Node_Build(NODE_FLOAT, span);
     node.v_float = value;
     return Push_And_Get_Id(nodes, node);
 }
 
 size_t Node_Build_Grouping(List *nodes, Span const span, Node_Idx inner)
 {
-    Ast_Node node = Node_Build(AST_GROUPING, span);
+    Ast_Node node = Node_Build(NODE_GROUPING, span);
     node.v_inner = inner;
     return Push_And_Get_Id(nodes, node); 
 }
@@ -212,7 +212,7 @@ size_t Node_Build_Grouping(List *nodes, Span const span, Node_Idx inner)
 size_t Node_Build_Symbol(List *nodes, Span const span, const char *src)
 {
     char *raw = Get_Lexeme(src, span.pos, span.len);
-    Ast_Node node = Node_Build(AST_SYMBOL, span);
+    Ast_Node node = Node_Build(NODE_SYMBOL, span);
     node.v_symbol = strdup(raw);
     return Push_And_Get_Id(nodes, node); 
 }

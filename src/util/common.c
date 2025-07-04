@@ -6,9 +6,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//-------------------------------------------------------------------------------//
-// tokens methods
-//-------------------------------------------------------------------------------//
+//===============================================================================//
+// TOKEN IMPLEMENTATION
+//===============================================================================//
 
 void Print_Token(const char *src, Token const *self)
 {
@@ -29,9 +29,9 @@ void Print_Token(const char *src, Token const *self)
         free((void *)lex);
 }
 
-//-------------------------------------------------------------------------------//
-// list methods
-//-------------------------------------------------------------------------------//
+//===============================================================================//
+// LIST IMPLEMENTATION
+//===============================================================================//
 
 List List_New(size_t size, size_t init_capacity)
 {
@@ -83,9 +83,9 @@ void List_Free(List *self)
     free(self->data);
 }
 
-//-------------------------------------------------------------------------------//
-// lexeme methods
-//-------------------------------------------------------------------------------//
+//===============================================================================//
+// LEXEME FUNCTIONS
+//===============================================================================//
 
 char *Get_Lexeme(const char *src, size_t pos, size_t len)
 {
@@ -120,6 +120,47 @@ void Remove_Underbars(char *str)
         src++;
     }
     *dst = '\0';
+}
+
+//===============================================================================//
+// OPERATOR HELPER FUNCTIONS
+//===============================================================================//
+
+static const int OPERATOR_FLAGS[] = {
+    #define X(name, token, str, flag) [name] = flag,
+    OPERATOR_LIST
+    #undef X
+};
+
+static inline int get_op_by_token(Token_Kind kind)
+{
+    switch (kind) {
+        #define X(name, token, str, flag) case token: return name;
+        OPERATOR_LIST
+        #undef X
+        default: return -1;
+    }
+}
+
+/// @brief Returns the `Operator` pertaining to this token kind that is a binary operator.
+inline int Get_Binary_Operator(Token_Kind kind)
+{
+    int op = get_op_by_token(kind);
+    return (op != -1 && (OPERATOR_FLAGS[op] & OP_FLAG_BINARY) ? op : -1);
+}
+
+/// @brief Returns the `Operator` pertaining to this token kind that is a unary operator.
+inline int Get_Unary_Operator(Token_Kind kind)
+{
+    int op = get_op_by_token(kind);
+    return (op != -1 && (OPERATOR_FLAGS[op] & OP_FLAG_UNARY) ? op : -1);
+}
+
+/// @brief Returns the `Operator` pertaining to this token kind that is an assignment operator.
+inline int Get_Assign_Operator(Token_Kind kind)
+{
+    int op = get_op_by_token(kind);
+    return (op != -1 && (OPERATOR_FLAGS[op] & OP_FLAG_ASSIGN) ? op : -1);
 }
 
 //-------------------------------------------------------------------------------//

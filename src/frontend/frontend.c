@@ -409,7 +409,7 @@ static Node_Idx parse_literal(parser *self)
             size_t len = current(self).span.len;
             Span span = (Span) {tk.span.pos, 1 + len};
 
-            Ast_Node node = Node_Build(AST_GROUPING, span);
+            Ast_Node node = Node_Build(NODE_GROUPING, span);
             node.v_inner = inner;
 
             return Push_And_Get_Id(self->map, node);           
@@ -485,14 +485,14 @@ static Node_Idx parse_call(parser *self)
 
         /* make list node */
         size_t args_end = current(self).span.pos;
-        Ast_Node list_base = Node_Build(AST_LIST, (Span) {args_start, args_end - args_start});
+        Ast_Node list_base = Node_Build(NODE_LIST, (Span) {args_start, args_end - args_start});
         list_base.v_list = args;
         Node_Idx args_idx = Push_And_Get_Id(self->map, list_base);
 
         /* make call node */
         Span span = (Span) {tk.span.pos, tk.span.len + current(self).span.len};
         Ast_Call_Expr call_expr = (Ast_Call_Expr) {.symbol = expr, .args = args_idx};
-        Ast_Node node = Node_Build(AST_CALL_EXPR, span);
+        Ast_Node node = Node_Build(NODE_CALL, span);
         node.v_call_expr = call_expr;
 
         expr = Push_And_Get_Id(self->map, node);
@@ -518,7 +518,7 @@ static Node_Idx parse_binary(parser *self)
         PARSER_CHECK_INVALID_NODE(rhs);
 
         Ast_Binary_Expr value = (Ast_Binary_Expr) {.lhs = expr, .op = op, .rhs = rhs};
-        Ast_Node node = Node_Build(AST_BINARY_EXPR, span);
+        Ast_Node node = Node_Build(NODE_BINARY, span);
         
         node.v_binary_expr = value;
         expr = Push_And_Get_Id(self->map, node);
@@ -542,7 +542,7 @@ static Node_Idx parse_assign(parser *self)
         Node_Idx value = parse_expr(self);
         PARSER_CHECK_INVALID_NODE(value);
 
-        Ast_Node node = Node_Build(AST_ASSIGN_EXPR, span);
+        Ast_Node node = Node_Build(NODE_ASSIGNMENT, span);
         node.v_assign_expr = (Ast_Assign_Expr) {
             .name = expr,
             .op = op,
@@ -567,7 +567,7 @@ static Node_Idx parse_variable(parser *self, bool mutability)
     
     /* validate symbol */
     Ast_Node *symbol_node = List_Get(self->map, symbol);
-    if (symbol_node->type != AST_SYMBOL)
+    if (symbol_node->type != NODE_SYMBOL)
     {
         PARSER_EMIT_ERR(ERR_SYNTAX, tk.x, tk.y, tk.span, "expected symbol");
         return 0;
@@ -593,7 +593,7 @@ static Node_Idx parse_variable(parser *self, bool mutability)
 
     /* create node */
     Token c = current(self); Span span = SPAN_FROM_THEN_TO_CURRENT(tk, c);
-    Ast_Node node = Node_Build(AST_VARIABLE_DECL, span);
+    Ast_Node node = Node_Build(NODE_VARIABLE, span);
     node.v_variable_decl = (Ast_Variable_Decl) {
         .symbol = symbol,
         .initializer = initializer,
@@ -629,8 +629,8 @@ static Node_Idx parse_statement(parser *self)
             size_t x = current(self).x;
             size_t y = current(self).y;
             Ast_Node *expr_node = List_Get(self->map, expr);
-            if (expr_node->type != AST_ASSIGN_EXPR
-                && expr_node->type != AST_CALL_EXPR)
+            if (expr_node->type != NODE_ASSIGNMENT
+                && expr_node->type != NODE_CALL)
             {
                 PARSER_EMIT_ERR(ERR_SYNTAX, x, y, expr_node->span, "invalid expression statement");
                 return 0;
@@ -666,7 +666,7 @@ static bool test_parser(Test_Info *info, const char *src)
     List subnodes = List_New(sizeof(Ast_Node), INIT_PROGRAM_CAPACITY);
     Ast_Node root = (Ast_Node) {
         .span = (Span) {0},
-        .type = AST_PROGRAM, 
+        .type = NODE_ROOT, 
         .v_root = subnodes,
     };
 

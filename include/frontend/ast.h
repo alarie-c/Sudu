@@ -14,31 +14,19 @@ typedef size_t Node_Idx;
 
 /// @brief Enum constants for the different types of nodes in the AST,
 /// corresponding with what is stored in the Ast_Node union type.
-typedef enum _Node_Type
+typedef enum _Node_Kind
 {
-    AST_PROGRAM = 0,
-    AST_VARIABLE_DECL,
-    AST_BINARY_EXPR,
-    AST_ASSIGN_EXPR,
-    AST_CALL_EXPR,
-    AST_LIST,
-    AST_GROUPING,
-    AST_SYMBOL,
-    AST_INTEGER,
-    AST_FLOAT,
-} Node_Type;
-
-/// @brief Holds ever operator for binary expressions.
-typedef enum _Ast_Op_Kind
-{
-    OP_ADD,
-    OP_SUB,
-    OP_MUL,
-    OP_DIV,
-    OP_MOD,
-    OP_EQ,
-    OP_PLUS_EQ,
-} Ast_Op_Kind;
+    NODE_ROOT = 0,
+    NODE_INTEGER,
+    NODE_FLOAT,
+    NODE_SYMBOL,
+    NODE_GROUPING,
+    NODE_LIST,
+    NODE_CALL,
+    NODE_BINARY,
+    NODE_VARIABLE,
+    NODE_ASSIGNMENT,
+} Node_Kind;
 
 //===============================================================================//
 // COMPLEX NODE STRUCTS
@@ -89,7 +77,7 @@ void Ast_List_Push(Ast_List *self, Node_Idx node);
 /// the type member and the union type member.
 typedef struct _Ast_Node
 {
-    Node_Type type;
+    Node_Kind type;
     union {
         List v_root;
         Ast_Variable_Decl v_variable_decl;
@@ -132,7 +120,7 @@ void Node_Free(Ast_Node *self);
 /// @param type the node type.
 /// @param span the span instance.
 /// @return a zero'd out node with `type` and `span` members set.
-Ast_Node Node_Build(Node_Type type, Span span);
+Ast_Node Node_Build(Node_Kind type, Span span);
 
 /// @brief Creates an integer node from the value provided.
 /// @param nodes the node map to be inserted into.
@@ -161,52 +149,6 @@ Node_Idx Node_Build_Grouping(List *nodes, Span const span, Node_Idx inner);
 /// @param src source code to extract the lexeme from.
 /// @return a node of type AST_SYMBOL.
 Node_Idx Node_Build_Symbol(List *nodes, Span const span, const char *src);
-
-//===============================================================================//
-// STATIC MAPS AND GETTERS
-//===============================================================================//
-
-/// @brief Returns the `Ast_Op_Kind` index of an infix binary operator if
-/// a valid one if found.
-/// @param kind token kind to match on.
-/// @return index/enum value of an `Ast_Op_Kind`, returning `-1` in the error case.
-static inline int Get_Binary_Infix_Operator(Token_Kind kind)
-{
-    switch (kind)
-    {
-        case TOK_PLUS: return OP_ADD;
-        case TOK_MINUS: return OP_SUB;
-        case TOK_STAR: return OP_MUL;
-        case TOK_SLASH: return OP_DIV;
-        case TOK_PERCENT: return OP_MOD;
-        default: return -1;
-    }
-}
-
-/// @brief Returns the `Ast_Op_Kind` index of an infix assignment operator if
-/// a valid one if found.
-/// @param kind token kind to match on.
-/// @return index/enum value of an `Ast_Op_Kind`, returning `-1` in the error case.
-static inline int Get_Assignment_Infix_Operator(Token_Kind kind)
-{
-    switch (kind)
-    {
-        case TOK_EQ: return OP_EQ;
-        case TOK_PLUS_EQ: return OP_PLUS_EQ;
-        default: return -1;
-    }
-}
-
-/// @brief Maps an `Ast_Op_Kind` to a `const char*`.
-static const char *AST_OP_NAMES[] = {
-    [OP_ADD]     = "+",
-    [OP_SUB]     = "-",
-    [OP_MUL]     = "*",
-    [OP_DIV]     = "/",
-    [OP_MOD]     = "%",
-    [OP_EQ]      = "=",
-    [OP_PLUS_EQ] = "+=",
-};
 
 //===============================================================================//
 // ABSTRACT SYNTAX TREE
