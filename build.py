@@ -49,13 +49,14 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--clean", action="store_true")
     parser.add_argument("-b", "--build", action="store_true")
     parser.add_argument("-r", "--run", action="store_true")
+    parser.add_argument("-a", "--all", action="store_true")
     args = parser.parse_args()
 
-    if args.clean:
+    if args.all or args.clean:
         clean()
 
-    if args.build:
+    if args.all or args.build:
         build()
 
-    if args.run:
+    if args.all or args.run:
         run()

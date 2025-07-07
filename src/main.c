@@ -1,4 +1,4 @@
-#include "frontend/frontend.h"
+#include "frontend/lexer.h"
 #include "util/errors.h"
 #include "util/common.h"
 #include "util/tests.h"
@@ -11,8 +11,15 @@ void tests()
 
     Load_Test(env,
         Create_Test(
-            Test_Parser,
-            "Parser",
+            Test_Lexer,
+            "Lexer",
+            TEST_TYPE_MANUAL
+        )
+    );
+    Load_Test(env,
+        Create_Test(
+            Test_Literals,
+            "Lexer Literals",
             TEST_TYPE_MANUAL
         )
     );

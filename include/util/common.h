@@ -76,26 +76,56 @@ void Remove_Underbars(char *str);
 //===============================================================================//
 
 #define TOKEN_LIST \
-    X(TOK_ILLEGAL,         "ILLEGAL") \
-    X(TOK_OPEN_PAREN,      "OPEN_PAREN") \
-    X(TOK_CLOSE_PAREN,     "CLOSE_PAREN") \
-    X(TOK_EQUALS,          "EQUALS") \
-    X(TOK_PLUS_EQUALS,     "PLUS_EQUALS") \
-    X(TOK_PLUS,            "PLUS") \
-    X(TOK_MINUS,           "MINUS") \
-    X(TOK_STAR,            "STAR") \
-    X(TOK_SLASH,           "SLASH") \
-    X(TOK_PERCENT,         "PERCENT") \
-    X(TOK_COMMA,           "COMMA") \
-    X(TOK_SEMICOLON,       "SEMICOLON") \
-    X(TOK_SYMBOL_LITERAL,  "SYMBOL_LITERAL") \
-    X(TOK_INTEGER_LITERAL, "INTEGER_LITERAL") \
-    X(TOK_STRING_LITERAL,  "STRING_LITERAL") \
-    X(TOK_FLOAT_LITERAL,   "FLOAT_LITERAL") \
-    X(TOK_VAR,             "VAR") \
-    X(TOK_CONST,           "CONST") \
-    X(TOK_NEWLINE,         "NEWLINE") \
-    X(TOK_EOF,             "EOF")
+    X(TOK_ILLEGAL,            "ILLEGAL") \
+    X(TOK_OPEN_PAREN,         "OPEN_PAREN") \
+    X(TOK_CLOSE_PAREN,        "CLOSE_PAREN") \
+    X(TOK_OPEN_BRACE,         "OPEN_BRACE") \
+    X(TOK_CLOSE_BRACE,        "CLOSE_BRACE") \
+    X(TOK_OPEN_BRACKET,       "OPEN_BRACKET") \
+    X(TOK_CLOSE_BRACKET,      "CLOSE_BRACKET") \
+    X(TOK_NEWLINE,            "NEWLINE") \
+    X(TOK_PLUS,               "PLUS") \
+    X(TOK_MINUS,              "MINUS") \
+    X(TOK_STAR,               "STAR") \
+    X(TOK_SLASH,              "SLASH") \
+    X(TOK_PLUS_PLUS,          "PLUS_PLUS") \
+    X(TOK_MINUS_MINUS,        "MINUS_MINUS") \
+    X(TOK_STAR_STAR,          "STAR_STAR") \
+    X(TOK_PLUS_EQUALS,        "PLUS_EQUALS") \
+    X(TOK_MINUS_EQUALS,       "MINUS_EQUALS") \
+    X(TOK_STAR_EQUALS,        "STAR_EQUALS") \
+    X(TOK_STAR_STAR_EQUALS,   "STAR_STAR_EQUALS") \
+    X(TOK_SLASH_SLASH,        "SLASH_SLASH") \
+    X(TOK_SLASH_EQUALS,       "SLASH_EQUALS") \
+    X(TOK_SLASH_SLASH_EQUALS, "SLASH_SLASH_EQUALS") \
+    X(TOK_PERCENT,            "PERCENT") \
+    X(TOK_BANG,               "BANG") \
+    X(TOK_BANG_EQUALS,        "BANG_EQUALS") \
+    X(TOK_EQUALS,             "EQUALS") \
+    X(TOK_EQUALS_EQUALS,      "EQUALS_EQUALS") \
+    X(TOK_LESS,               "LESS") \
+    X(TOK_LESS_EQUALS,        "LESS_EQUALS") \
+    X(TOK_GREATER,            "GREATER") \
+    X(TOK_GREATER_EQUALS,     "GREATER_EQUALS") \
+    X(TOK_PIPE,               "PIPE") \
+    X(TOK_PIPE_PIPE,          "PIPE_PIPE") \
+    X(TOK_AMPSAND,            "AMPSAND") \
+    X(TOK_AMPSAND_AMPSAND,    "AMPSAND_AMPSAND") \
+    X(TOK_COLON,              "COLON") \
+    X(TOK_SEMICOLON,          "SEMICOLON") \
+    X(TOK_DOT,                "DOT") \
+    X(TOK_QUESTION,           "QUESTION") \
+    X(TOK_COMMA,              "COMMA") \
+    X(TOK_ARROW,              "ARROW") \
+    X(TOK_FAT_ARROW,          "FAT_ARROW") \
+    X(TOK_SYMBOL_LITERAL,     "SYMBOL_LITERAL") \
+    X(TOK_INTEGER_LITERAL,    "INTEGER_LITERAL") \
+    X(TOK_STRING_LITERAL,     "STRING_LITERAL") \
+    X(TOK_FLOAT_LITERAL,      "FLOAT_LITERAL") \
+    X(TOK_FUNC,               "FUNC") \
+    X(TOK_LET,                "LET") \
+    X(TOK_VAR,                "VAR") \
+    X(TOK_EOF,                "EOF")
 
 typedef enum _Token_Kind
 {

@@ -6,6 +6,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define INIT_NODE_MAP_CAPACITY 256
+#define INIT_ROOT_NODE_CAPACITY 64
+
 typedef size_t Node_Idx;
 
 //===============================================================================//
@@ -29,45 +32,50 @@ typedef enum _Node_Kind
 } Node_Kind;
 
 //===============================================================================//
-// COMPLEX NODE STRUCTS
+// NODE SUBTYPE STRUCTS
 //===============================================================================//
 
-typedef struct _Ast_Variable_Decl
+typedef struct _Node_Variable
 {
     Node_Idx symbol;
     Node_Idx initializer;
     bool mutability;
-} Ast_Variable_Decl;
+} Node_Variable;
 
-typedef struct _Ast_Binary_Expr
+typedef struct _Node_Binary
 {
-    Ast_Op_Kind op;
+    Operator op;
     Node_Idx lhs;
     Node_Idx rhs;
-} Ast_Binary_Expr;
+} Node_Binary;
 
-typedef struct _Ast_Assign_Expr
+typedef struct _Node_Assignment
 {
-    Ast_Op_Kind op;
-    Node_Idx name;
-    Node_Idx value;
-} Ast_Assign_Expr;
+    Operator op;
+    Node_Idx sym;
+    Node_Idx val;
+} Node_Assignment;
 
-typedef struct _Ast_Call_Expr
+typedef struct _Node_Call
 {
-    Node_Idx symbol;
+    Node_Idx sym;
     Node_Idx args;
-} Ast_Call_Expr;
+} Node_Call;
 
-typedef struct _Ast_List
+/// @brief A dynamically resizeable array of Node indices that can be
+/// created as a node itself and used to represent things like call args,
+/// procedure parameters, class members, etc.
+typedef struct _Node_List
 {
     Node_Idx *nodes;
     size_t count;
     size_t capacity;
-} Ast_List;
+} Node_List;
 
-Ast_List Ast_List_New(size_t init_capacity);
-void Ast_List_Push(Ast_List *self, Node_Idx node);
+/// @brief Push a node index to the node list.
+/// @param self the node list.
+/// @param node the node index.
+void Node_List_Add(Node_List *self, Node_Idx node);
 
 //===============================================================================//
 // AST NODES
@@ -75,80 +83,55 @@ void Ast_List_Push(Ast_List *self, Node_Idx node);
 
 /// @brief The encompassing Ast_Node type for all AST nodes, variation comes in the form of
 /// the type member and the union type member.
-typedef struct _Ast_Node
+typedef struct _Node
 {
     Node_Kind type;
-    union {
-        List v_root;
-        Ast_Variable_Decl v_variable_decl;
-        Ast_Binary_Expr v_binary_expr;
-        Ast_Assign_Expr v_assign_expr;
-        Ast_Call_Expr v_call_expr;
-        Ast_List v_list;
-        char *v_symbol;
-        float v_float;
-        int32_t v_integer;
-        Node_Idx v_inner;
-    };
     Span span;
-} Ast_Node;
+    union {
+        Node_List root;
+        Node_Variable variable;
+        Node_Binary binary;
+        Node_Assignment assignment;
+        Node_Call call;
+        Node_List list;
+        char *symbol_name;
+        float float_value;
+        int32_t int_value;
+        Node_Idx inner_node;
+    } data;
+} Node;
 
 /// @brief Pushes a node to the node map and returns it's ID/index.
 /// @param nodes the node map.
 /// @param node the node instance itself.
 /// @return the index of the node in the map.
-Node_Idx Push_And_Get_Id(List *nodes, Ast_Node node);
+Node_Idx Node_Insert(List *map, Node node);
 
 /// @brief Simple prints a node using a recursive method..
 /// @param nodes the node map.
 /// @param id the index of the node in the map.
 /// @param i number of spaces worth of indentation.
-void Print_Node(List *nodes, Node_Idx id, int i);
+void Node_Print(List *map, Node_Idx id, int i);
 
 /// @brief Frees a node, if neccesary. Really only needed.
 /// for nodes that own dynamically allocated memory, this does not
 /// free the actual node itself.
 /// @param self the node.
-void Node_Free(Ast_Node *self);
+void Node_Free(Node *self);
 
 //===============================================================================//
 // NODE BUILDER HELPER FUNCTIONS
 //===============================================================================//
 
-/// @brief Creates a node from the given type and sets the span, leaving everything
-/// else to be zero'd out.
-/// @param type the node type.
-/// @param span the span instance.
-/// @return a zero'd out node with `type` and `span` members set.
-Ast_Node Node_Build(Node_Kind type, Span span);
-
-/// @brief Creates an integer node from the value provided.
-/// @param nodes the node map to be inserted into.
-/// @param span the span of the node.
-/// @param value the integer value.
-/// @return a node of type AST_INTEGER.
-Node_Idx Node_Build_Integer(List *nodes, Span const span, int32_t value);
-
-/// @brief Creates an float node from the value provided.
-/// @param nodes the node map to be inserted into.
-/// @param span the span of the node.
-/// @param value the float value.
-/// @return a node of type AST_FLOAT.
-Node_Idx Node_Build_Float(List *nodes, Span const span, float value);
-
-/// @brief Creates a grouping node from the inner node ID provided.
-/// @param nodes the node map to be inserted into   .
-/// @param span the span of the node.
-/// @param inner the ID/index of the node inside the grouping.
-/// @return a node of type AST_GROUPING.
-Node_Idx Node_Build_Grouping(List *nodes, Span const span, Node_Idx inner);
-
-/// @brief Creates a symbol node from the name provided.
-/// @param nodes the node map to be inserted into  .
-/// @param span the span of the node.
-/// @param src source code to extract the lexeme from.
-/// @return a node of type AST_SYMBOL.
-Node_Idx Node_Build_Symbol(List *nodes, Span const span, const char *src);
+Node_Idx Make_Node_Integer(List *map, Span const span, int32_t value);
+Node_Idx Make_Node_Float(List *map, Span const span, float value);
+Node_Idx Make_Node_Grouping(List *map, Span const span, Node_Idx inner);
+Node_Idx Make_Node_Symbol(List *map, Span const span, const char *src);
+Node_Idx Make_Node_Binary(List *map, Span const span, Node_Idx lhs, Node_Idx rhs, Operator op);
+Node_Idx Make_Node_Assignment(List *map, Span const span, Node_Idx sym, Node_Idx val, Operator op);
+Node_Idx Make_Node_Variable(List *map, Span const span, Node_Idx sym, Node_Idx initializer, bool mut);
+Node_Idx Make_Node_Call(List *map, Span const span, Node_Idx sym, Node_Idx args);
+Node_Idx Make_Node_List(List *map, Span const start_span, size_t capacity);
 
 //===============================================================================//
 // ABSTRACT SYNTAX TREE
@@ -158,8 +141,17 @@ Node_Idx Node_Build_Symbol(List *nodes, Span const span, const char *src);
 /// node map for the nodes to be stored contiguously in memory, along with the root node.
 typedef struct
 {
-    Ast_Node root_node;
+    Node *root_node;
     List node_map;
-} Abstract_Syntax_Tree;
+} AST;
+
+/// @brief Initializes an empty AST with nothing but the root node allocated.
+/// @return blank AST.
+AST AST_Init();
+
+/// @brief Pushes a node index to the root node of the AST.
+/// @param self the AST.
+/// @param node_idx index of the node.
+void AST_Insert(AST *self, Node_Idx node_idx);
 
 #endif // AST_H

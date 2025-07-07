@@ -9,72 +9,65 @@
 // NODE FUNCTIONS
 //===============================================================================//
 
-Node_Idx Push_And_Get_Id(List *nodes, Ast_Node node)
+Node_Idx Node_Insert(List *map, Node node)
 {
-    if (!nodes || !CHECK_LIST_COMPATIBILITY(nodes, Ast_Node))
+    if (!map || !CHECK_LIST_COMPATIBILITY(map, Node))
         return 0;
-    
-    Node_Idx id = nodes->count;
-    List_Add(nodes, &node);
+    Node_Idx id = map->count;
+    List_Add(map, &node);
     return id;
 }
 
-void Print_Node(List *nodes, Node_Idx id, int i)
+#define INDENT(i) for (int j = 0; j < (i); j++) putchar(' ')
+void Node_Print(List *map, Node_Idx id, int i)
 {
-    if (!nodes || id == 0 || !CHECK_LIST_COMPATIBILITY(nodes, Ast_Node))
+    if (!map || id == 0 || !CHECK_LIST_COMPATIBILITY(map, Node))
         return;
-
-    /* print indent spaces */
-    for (int j = 0; j < (i); j++) putchar(' ');
-
-    /* retrieve node */
-    Ast_Node *self = List_Get(nodes, id);
+    
+    INDENT(i);
+    Node *self = List_Get(map, id);
     if (!self)
     {
         printf("<NULL>\n");
         return;
     }
 
-    /* print node contents */
     printf("[%zu] : ", id);
     switch (self->type)
     {
         case NODE_VARIABLE:
         {
-            printf("VARIABLE DECL (MUT = %i):\n", self->v_variable_decl.mutability);
-            Print_Node(nodes, self->v_variable_decl.symbol, i + 2);
-            
-            if (self->v_variable_decl.initializer != 0)
-                Print_Node(nodes, self->v_variable_decl.initializer, i + 2);
-
+            printf("VARIABLE DECL (MUT = %i):\n", self->data.variable.mutability);
+            Node_Print(map, self->data.variable.symbol, i + 2);
+            if (self->data.variable.initializer != 0)
+                Node_Print(map, self->data.variable.initializer, i + 2);
             break;
         }
         case NODE_BINARY:
         {
-            printf("BINARY EXPR of %s:\n", AST_OP_NAMES[self->v_binary_expr.op]);
-            Print_Node(nodes, self->v_binary_expr.lhs, i + 2);
-            Print_Node(nodes, self->v_binary_expr.rhs, i + 2);
+            printf("BINARY EXPR of %s:\n", OPERATOR_NAMES[self->data.binary.op]);
+            Node_Print(map, self->data.binary.lhs, i + 2);
+            Node_Print(map, self->data.binary.rhs, i + 2);
             break;
         }
         case NODE_ASSIGNMENT:
         {
-            printf("ASSIGNMENT EXPR of %s:\n", AST_OP_NAMES[self->v_assign_expr.op]);
-            Print_Node(nodes, self->v_assign_expr.name, i + 2);
-            Print_Node(nodes, self->v_assign_expr.value, i + 2);
+            printf("ASSIGNMENT EXPR of %s:\n", OPERATOR_NAMES[self->data.assignment.op]);
+            Node_Print(map, self->data.assignment.sym, i + 2);
+            Node_Print(map, self->data.assignment.val, i + 2);
             break;
         }
         case NODE_CALL:
         {
             printf("CALL EXPR:\n");
-            Print_Node(nodes, self->v_call_expr.symbol, i + 2);
-            Print_Node(nodes, self->v_call_expr.args, i + 2);
+            Node_Print(map, self->data.call.sym, i + 2);
+            Node_Print(map, self->data.call.args, i + 2);
             break;
         }
         case NODE_LIST:
         {
             printf("LIST:");
-
-            if (self->v_list.count == 0)
+            if (self->data.list.count == 0)
             {
                 printf(" <Empty>\n");
                 break;
@@ -83,32 +76,32 @@ void Print_Node(List *nodes, Node_Idx id, int i)
             {
                 putchar('\n');
             }
-            for (size_t j = 0; j < self->v_list.count; j++)
+            for (size_t j = 0; j < self->data.list.count; j++)
             {
-                Node_Idx id = self->v_list.nodes[j];
-                Print_Node(nodes, id, i + 2);
+                Node_Idx id = self->data.list.nodes[j];
+                Node_Print(map, id, i + 2);
             }
             break;
         }
         case NODE_FLOAT:
         {
-            printf("FLOAT: %f\n", self->v_float);
+            printf("FLOAT: %f\n", self->data.float_value);
             break;
         }
         case NODE_INTEGER:
         {
-            printf("INTEGER: %d\n", self->v_integer);
+            printf("INTEGER: %d\n", self->data.int_value);
             break;
         }
         case NODE_GROUPING:
         {
             printf("GROUPING:\n");
-            Print_Node(nodes, self->v_inner, i + 2);
+            Node_Print(map, self->data.inner_node, i + 2);
             break;
         }
         case NODE_SYMBOL:
         {
-            printf("SYMBOL: %s\n", self->v_symbol);
+            printf("SYMBOL: %s\n", self->data.symbol_name);
             break;
         }
         default:
@@ -119,24 +112,21 @@ void Print_Node(List *nodes, Node_Idx id, int i)
     }
 }
 
-void Node_Free(Ast_Node *self)
+void Node_Free(Node *self)
 {
     if (!self) return;
-
     switch (self->type)
     {
         case NODE_SYMBOL:
         {
-            free(self->v_symbol);
+            free(self->data.symbol_name);
             break;
         }
-
         case NODE_LIST:
         {
-            free(self->v_list.nodes);
+            free(self->data.list.nodes);
             break;
         }
-
         default: break;
     }
 }
@@ -145,23 +135,9 @@ void Node_Free(Ast_Node *self)
 // SUBTYPE FUNCTIONS
 //===============================================================================//
 
-Ast_List Ast_List_New(size_t init_capacity)
-{
-    Ast_List self = {0};
-    
-    List basic_list = List_New(sizeof(Node_Idx), init_capacity);
-    if (basic_list.capacity == 0) return self;
-
-    self.nodes = basic_list.data;
-    self.capacity = init_capacity;
-    return self;
-}
-
-void Ast_List_Push(Ast_List *self, Node_Idx node)
+void Node_List_Add(Node_List *self, Node_Idx node)
 {
     if (!self) return;
-
-    /* grow array if neccesary */
     if (self->count >= self->capacity)
     {
         /*(FIX) grow by 50% not 100%*/
@@ -174,7 +150,6 @@ void Ast_List_Push(Ast_List *self, Node_Idx node)
         self->nodes = new_nodes;
         self->capacity = new_capacity;
     }
-
     self->nodes[self->count] = node;
     self->count++;
 }
@@ -183,36 +158,140 @@ void Ast_List_Push(Ast_List *self, Node_Idx node)
 // NODE BUILDER FUNCTIONS
 //===============================================================================//
 
-Ast_Node Node_Build(Node_Kind type, Span span)
+Node_Idx Make_Node_Integer(List *map, Span const span, int32_t value)
 {
-    return (Ast_Node) {.span = span, .type = type};
+    return Node_Insert(map, (Node) {
+        .type = NODE_INTEGER,
+        .span = span,
+        .data.int_value = value,
+    });
 }
 
-size_t Node_Build_Integer(List *nodes, Span const span, int32_t value)
+Node_Idx Make_Node_Float(List *map, Span const span, float value)
 {
-    Ast_Node node = Node_Build(NODE_INTEGER, span);
-    node.v_integer = value;
-    return Push_And_Get_Id(nodes, node);
+    return Node_Insert(map, (Node) {
+        .type = NODE_FLOAT,
+        .span = span,
+        .data.float_value = value,
+    });
 }
 
-size_t Node_Build_Float(List *nodes, Span const span, float value)
+Node_Idx Make_Node_Grouping(List *map, Span const span, Node_Idx inner)
 {
-    Ast_Node node = Node_Build(NODE_FLOAT, span);
-    node.v_float = value;
-    return Push_And_Get_Id(nodes, node);
+    return Node_Insert(map, (Node) {
+        .type = NODE_GROUPING,
+        .span = span,
+        .data.inner_node = inner,
+    });
 }
 
-size_t Node_Build_Grouping(List *nodes, Span const span, Node_Idx inner)
+Node_Idx Make_Node_Symbol(List *map, Span const span, const char *src)
 {
-    Ast_Node node = Node_Build(NODE_GROUPING, span);
-    node.v_inner = inner;
-    return Push_And_Get_Id(nodes, node); 
+    char *lexeme = Get_Lexeme(src, span.pos, span.len);
+    return Node_Insert(map, (Node) {
+        .type = NODE_SYMBOL,
+        .span = span,
+        .data.symbol_name = lexeme,
+    });
 }
 
-size_t Node_Build_Symbol(List *nodes, Span const span, const char *src)
+Node_Idx Make_Node_Binary(List *map, Span const span, Node_Idx lhs, Node_Idx rhs, Operator op)
 {
-    char *raw = Get_Lexeme(src, span.pos, span.len);
-    Ast_Node node = Node_Build(NODE_SYMBOL, span);
-    node.v_symbol = strdup(raw);
-    return Push_And_Get_Id(nodes, node); 
+    return Node_Insert(map, (Node) {
+        .type = NODE_BINARY,
+        .span = span,
+        .data.binary = (Node_Binary) {
+            .lhs = lhs,
+            .rhs = rhs,
+            .op = op,
+        },
+    });
+}
+
+Node_Idx Make_Node_Assignment(List *map, Span const span, Node_Idx sym, Node_Idx val, Operator op)
+{
+        return Node_Insert(map, (Node) {
+        .type = NODE_ASSIGNMENT,
+        .span = span,
+        .data.assignment = (Node_Assignment) {
+            .sym = sym,
+            .val = val,
+            .op = op,
+        },
+    });
+}
+
+Node_Idx Make_Node_Variable(List *map, Span const span, Node_Idx sym, Node_Idx initializer, bool mut)
+{
+    return Node_Insert(map, (Node) {
+        .type = NODE_VARIABLE,
+        .span = span,
+        .data.variable = (Node_Variable) {
+            .symbol = sym,
+            .initializer = initializer,
+            .mutability = mut,
+        },
+    });
+}
+
+Node_Idx Make_Node_Call(List *map, Span const span, Node_Idx sym, Node_Idx args)
+{
+    return Node_Insert(map, (Node) {
+        .type = NODE_CALL,
+        .span = span,
+        .data.call = (Node_Call) {
+            .sym = sym,
+            .args = args,
+        },
+    });
+}
+
+Node_Idx Make_Node_List(List *map, Span const start_span, size_t capacity)
+{
+    Node_List self = {0};
+    List basic_list = List_New(sizeof(Node_Idx), capacity);
+    
+    self.nodes = basic_list.data;
+    self.capacity = capacity;
+    return Node_Insert(map, (Node) {
+        .type = NODE_LIST,
+        .span = start_span,
+        .data.list = self,
+    });
+}
+
+//===============================================================================//
+// ABSTRACT SYNTAX TREE
+//===============================================================================//
+
+Node_Idx make_node_root(List *map, size_t capacity)
+{
+    Node_List self = {0};
+    List basic_list = List_New(sizeof(Node_Idx), capacity);
+    
+    self.nodes = basic_list.data;
+    self.capacity = capacity;
+    return Node_Insert(map, (Node) {
+        .type = NODE_ROOT,
+        .span = (Span) {0},
+        .data.root = self,
+    });
+}
+
+AST AST_Init()
+{
+    List node_map = List_New(sizeof(Node), INIT_NODE_MAP_CAPACITY);
+    
+    Node_Idx root_idx = make_node_root(&node_map, INIT_ROOT_NODE_CAPACITY);
+    Node *root_node = List_Get(&node_map, root_idx);
+
+    return (AST) {
+        .node_map = node_map,
+        .root_node = root_node,
+    };
+}
+
+void AST_Insert(AST *self, Node_Idx node_idx)
+{
+    Node_List_Add(&self->root_node->data.root, node_idx);
 }

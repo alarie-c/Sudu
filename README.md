@@ -4,20 +4,6 @@ Sudu closely translates to "speed" in Mandarin Chinese.
 To be implemented as a bytecode interpreter on a virtual machine...
 Statically and explicitly typed, with some flexibility.
 
-```
-proc get_length(string: str) -> uint
-    return string.len()
-end
-
-proc greeting(name: str, len: uint)
-    print("Hello, $name! Your name is $len characters long!")
-end
-
-proc main()
-    greeting("Steve", get_length(steve))
-end
-```
-
 ## Progress Tracker
 
 ### General
@@ -44,3 +30,5 @@ end
 - [ ] Bytecode Compiler
     - [ ] Register Allocator
     - [ ] Basic Expressions like '5 + 10 + 30'
+
+
