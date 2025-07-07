@@ -20,5 +20,6 @@ Tokens Tokenize(const char *src, List *errors);
 /* Tests */
 void Test_Lexer(Test_Info *info);
 void Test_Literals(Test_Info *info);
+void Test_Lexer_Other(Test_Info *info);
 
 #endif // LEXER_H

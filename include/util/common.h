@@ -122,6 +122,7 @@ void Remove_Underbars(char *str);
     X(TOK_INTEGER_LITERAL,    "INTEGER_LITERAL") \
     X(TOK_STRING_LITERAL,     "STRING_LITERAL") \
     X(TOK_FLOAT_LITERAL,      "FLOAT_LITERAL") \
+    X(TOK_POUND_BANG,         "POUND_BANG") \
     X(TOK_FUNC,               "FUNC") \
     X(TOK_LET,                "LET") \
     X(TOK_VAR,                "VAR") \

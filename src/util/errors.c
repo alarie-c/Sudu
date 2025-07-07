@@ -145,7 +145,7 @@ void Print_Error(const char *src, const char *path, Error const *self)
     struct line_fetch_result line = fetch_line(src, self->span.pos);
     if (!line.valid)
     {
-        printf("<Error fetching line content>");
+        printf("<Error fetching line content>\n");
         return;
     }
 

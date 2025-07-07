@@ -23,6 +23,13 @@ void tests()
             TEST_TYPE_MANUAL
         )
     );
+    Load_Test(env,
+        Create_Test(
+            Test_Lexer_Other,
+            "Lexer Other",
+            TEST_TYPE_MANUAL
+        )
+    );
 
     Run_Battery(env);
     Free_Test_Environment(env);

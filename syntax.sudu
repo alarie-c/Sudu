@@ -1,0 +1,13 @@
+# this is a single-line comment
+
+#*
+ * this is a multi-line comment
+ *#
+
+#! this is a compiler directive
+
+"this is a string literal"
+
+"""
+this is a multiline string literal
+"""
