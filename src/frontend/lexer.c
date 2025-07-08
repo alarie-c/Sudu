@@ -168,14 +168,14 @@ static Token take_string_literal(lexer_t *lexer, size_t pos, size_t x)
                 const char *message = "string literal missing delimiter";
                 Error e = (Error) {
                     .type = ERR_INVALID_LITERAL,
-                    .span = distance_span(lexer->pos, pos),
+                    .span = {pos, 1},
                     .x = x,
                     .y = lexer->y,
                     .message = message,
-                    .msg_len = strlen(message)
+                    .msg_len = strlen(message),
                 };
                 List_Add(lexer->errs, &e);
-                return TOKEN_HERE(TOK_ILLEGAL);
+                return next_token(lexer); /* should return this EOF */
             }
             default: consume_char(lexer);
         }
@@ -502,6 +502,10 @@ Tokens Tokenize(const char *src, List *errors)
         consume_char(&lexer);
     }
 
+    Token *last_tok = List_Get(&buffer.tokens, buffer.tokens.count - 1);
+    if (last_tok && last_tok->kind == TOK_EOF)
+        return buffer;
+
     Token eof_tok = (Token) {
         .kind = TOK_EOF,
         .span = (Span) {lexer.pos, 1},
@@ -555,7 +559,7 @@ void Test_Literals(Test_Info *info)
         "0 .5 5. 0.5.round() 1_000 1_000.5 42__42 3..14\n"
         "symbol func var let another_symbol343 _and_another";
 
-    List errors = {0};
+    List errors = List_New(sizeof(Error), 4);
     Tokens buf = Tokenize(src, &errors);
 
     if (!buf.valid) {
@@ -584,16 +588,9 @@ void Test_Literals(Test_Info *info)
 void Test_Lexer_Other(Test_Info *info)
 {
     const char *src =
-        "# this is a comment\n"
-        "\"\"\"\n"
-        "this is a raw string literal\n"
-        "\"\"\"\n"
-        "###\n"
-        "this is a multiline comment yay\n"
-        "###\n"
-        "main()";
+        "\"this will error";
 
-    List errors = {0};
+    List errors = List_New(sizeof(Error), 4);
     Tokens buf = Tokenize(src, &errors);
 
     if (!buf.valid) {
@@ -612,6 +609,8 @@ void Test_Lexer_Other(Test_Info *info)
         Token *tok = &tokens[i];
         Print_Token(src, tok);
     }
+
+    Report_Errors(&errors, src, "<TestPath>.sudu");
 
     List_Free(&errors);
 

@@ -49,17 +49,21 @@ struct line_fetch_result fetch_line(const char *src, size_t i)
         return (struct line_fetch_result) {(Span) {0}, false};
 
     // find the beginning of the line
-    for (size_t j = i - 1; /*N/A*/; j--)
+
+    if (i > 0)
     {
-        if (j == 0)
+        for (size_t j = i - 1; /*N/A*/; j--)
         {
-            start = 0;
-            break;
-        }
-        if (src[j] == '\n' && j != i)
-        {
-            start = j + 1;
-            break;
+            if (j == 0)
+            {
+                start = 0;
+                break;
+            }
+            if (src[j] == '\n' && j != i)
+            {
+                start = j + 1;
+                break;
+            }
         }
     }
 
