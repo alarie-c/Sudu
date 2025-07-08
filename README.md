@@ -1,34 +1,22 @@
 # Sudu Language Implemention
 
-Sudu closely translates to "speed" in Mandarin Chinese.
-To be implemented as a bytecode interpreter on a virtual machine...
-Statically and explicitly typed, with some flexibility.
+A language to allow for the rapid developmeny of safe, creative, and fast solutions to problems in scientific computing, statistics, mathematical modeling, mathematics, data science, and more. To be implemented as a bytecode interpreter on a register-based virtual machine. Statically and explicitly typed, with some flexibility. Design is largely inspired by Lua, with implementation taking inspiration from both Lua and Java.
 
-## Progress Tracker
+## Progress
 
-### General
-- [x] Rework to use single-function interface with private internal state structs
-- [x] Rework into one `frontend.h` interface with `parser.c` and `lexer.c` implementations
-- [x] Update the build script to allow for tests/compilation and for aborting on compilation errors
-- [ ] Implement binary postfixup algorithm for the binary expression parser
-- [x] Create a generalized List structure for dynamic arrays
-- [x] Implement `List<Error>` for error collection
-- [x] Implement `List<Ast_Node>` for the parser
+- [x] Initial lexer completion
+- [ ] Lexer polish pass
+- [ ] Parse standard 1
 
-### Systems
-- [ ] Parser
-    - [x] Binary Infix Expressions
-    - [ ] Unary Prefix Expressions
-    - [ ] Function Declarations
-    - [x] Function Calls
-    - [x] Variable Declaratiosn
-    - [x] Variable Assignment
-- [ ] Sematic Analyzer
-    - [ ] Type Checker
-    - [ ] Name Resolution
-    - [ ] Scope/Context Tracking
-- [ ] Bytecode Compiler
-    - [ ] Register Allocator
-    - [ ] Basic Expressions like '5 + 10 + 30'
+## Standards
+
+### Standard 1
+
+Parse, type check, resolve, compile, and run code for the following source:
+```
+var i = 0
+i = i + 1
+print(i)
+```
 
 

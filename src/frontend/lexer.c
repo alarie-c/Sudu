@@ -151,7 +151,7 @@ static Token take_string_literal(lexer_t *lexer, size_t pos, size_t x)
         {
             case '\n':
             {
-                const char *message = "newline not allowed in string literals";
+                const char *message = "Newlines are not allowed in string literals. Use `\"\"\"` for multi-line literals.";
                 Error e = (Error) {
                     .type = ERR_INVALID_LITERAL,
                     .span = distance_span(lexer->pos, pos),
@@ -165,7 +165,7 @@ static Token take_string_literal(lexer_t *lexer, size_t pos, size_t x)
             }
             case '\0':
             {
-                const char *message = "string literal missing delimiter";
+                const char *message = "String literal has no closing `\"`.";
                 Error e = (Error) {
                     .type = ERR_INVALID_LITERAL,
                     .span = {pos, 1},
@@ -196,17 +196,17 @@ static Token take_raw_string_literal(lexer_t *lexer, size_t pos, size_t x, size_
         char c = current_char(lexer);
         if (c == '\0')
         {
-            const char *message = "string literal missing delimiter";
+            const char *message = "Raw string literal has no closing `\"\"\"`.";
             Error e = (Error) {
                 .type = ERR_INVALID_LITERAL,
-                .span = distance_span(lexer->pos, pos),
+                .span = {pos, 3}, /* 3 len for the triple " delimiter */
                 .x = x,
                 .y = lexer->y,
                 .message = message,
-                .msg_len = strlen(message)
+                .msg_len = strlen(message),
             };
             List_Add(lexer->errs, &e);
-            return TOKEN_HERE(TOK_ILLEGAL);
+            return next_token(lexer); /* should return this EOF */
         }
         consume_char(lexer);
     }
@@ -451,6 +451,16 @@ static Token next_token(lexer_t *lexer)
                 };
             }
             
+            const char *message = "This character is not allowed.";
+            Error e = (Error) {
+                .type = ERR_ILLEGAL_CHAR,
+                .span = {start_pos, 1},
+                .x = start_col,
+                .y = lexer->y,
+                .message = message,
+                .msg_len = strlen(message)
+            };
+            List_Add(lexer->errs, &e);
             return TOKEN_HERE(TOK_ILLEGAL);
         }
     }
@@ -484,20 +494,7 @@ Tokens Tokenize(const char *src, List *errors)
         Token t = next_token(&lexer);
         List_Add(&buffer.tokens, &t);
 
-        /* throw error if illegal character is found */
-        if (t.kind == TOK_ILLEGAL)
-        {
-            Error e = (Error) {
-                .type = ERR_ILLEGAL_CHAR,
-                .span = t.span,
-                .x = t.x,
-                .y = t.y,
-                .message = "illegal character in source code",
-                .msg_len = strlen("illegal character in source code")
-            };
-            List_Add(errors, &e);
-            buffer.valid = false;
-        }
+        
 
         consume_char(&lexer);
     }
@@ -588,7 +585,9 @@ void Test_Literals(Test_Info *info)
 void Test_Lexer_Other(Test_Info *info)
 {
     const char *src =
-        "\"this will error";
+        "will error -> $\n"
+        "\"this one will also error\n"
+        "\"\"\"this will error";
 
     List errors = List_New(sizeof(Error), 4);
     Tokens buf = Tokenize(src, &errors);
